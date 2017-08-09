@@ -1,0 +1,19 @@
+{
+  "name": "faye-poc-client-nodejs",
+  "version": "1.0.0",
+  "description": "A simple POC Faye client for NodeJS",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "faye"
+  ],
+  "author": "Hemal Harindaka",
+  "license": "MIT",
+  "dependencies": {
+    "faye": "1.2.4",
+    "guid": "0.0.12"
+  }
+}

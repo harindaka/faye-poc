@@ -1,0 +1,19 @@
+{
+  "name": "faye-poc-server",
+  "version": "1.0.0",
+  "description": "A simple POC Pub/Sub Server using Faye",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "faye"
+  ],
+  "author": "Hemal Harindaka",
+  "license": "MIT",
+  "dependencies": {
+    "faye": "1.2.4",
+    "faye-redis": "0.2.0"
+  }
+}
