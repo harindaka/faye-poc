@@ -45,6 +45,17 @@
                 console.log('The server explicitly rejected publishing the message due to error: ' + error.message);
             });
         }, 3000);
+    }, function(error){
+        console.log('Unable to subscribe to topic ' + topicUrl + ' due to error ' + serializeError(error));
     });
+
+    function serializeError(error){
+        if(error.message && error.message.code && error.message.message){
+            return error.message.code + ': ' + error.message.message
+        }
+        else {
+            return JSON.stringify(error);
+        }
+    }
     
 })();

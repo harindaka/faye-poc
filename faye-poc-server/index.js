@@ -1,28 +1,33 @@
 (function(){
     
+    var config = require('./config');
     var http = require('http');
     var httpServer = http.createServer();
 
     var faye = require('faye');
-    var fayeRedisEngine = require('faye-redis');
-    var fayeServer = new faye.NodeAdapter({
-        mount: '/messages',
-        timeout: 30,
-        engine: {
-            type: fayeRedisEngine,
-            host: 'localhost',
-            port: 6379
+    var fayeServer = new faye.NodeAdapter(config.server.faye);
+
+    fayeServer.addExtension({
+        incoming: function(message, callback) {
+            if (message.channel === '/meta/subscribe') {                
+                if(!config.topics[message.subscription]){
+                    message.error = buildError('E0000'); 
+                } else if (!isAuthorized(message)){
+                    message.error = buildError('E0001');
+                }
+            }
+            
+            callback(message);
         }
     });
 
     fayeServer.attach(httpServer);
-    var port = 3000;
-    httpServer.listen(port, function(error){
+    httpServer.listen(config.server.port, function(error){
         if(error){
             console.log(error);
         }
         else{
-            console.log('Listening on port ' + port);
+            console.log('Listening on port ' + config.server.port);
 
             var publishedMessageCount = 0;
             var serverSideFayeClient = fayeServer.getClient();
@@ -43,4 +48,15 @@
             }, 3000);
         }
     });
+
+    function isAuthorized(message) {
+        return true;
+    };
+
+    function buildError(errorCode){
+        return {
+            code: errorCode,
+            message: config.errors[errorCode]
+        }
+    }
 })();
