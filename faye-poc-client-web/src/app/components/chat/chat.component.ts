@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, AfterViewChecked, ElementRef, ViewChild, OnInit } from '@angular/core';
 
 declare var Faye: any;
 
@@ -8,6 +8,7 @@ declare var Faye: any;
   styleUrls: ['./chat.component.css']
 })
 export class ChatComponent implements OnInit {
+  @ViewChild('scrollMe') private scrollContainer: ElementRef;
 
   model: any = {};
   fayeClient: any = null;
@@ -35,7 +36,19 @@ export class ChatComponent implements OnInit {
         self.consoleLog('Waiting for messages...');
     }, function(error){
         self.consoleLog('Unable to subscribe to topic ' + topicUrl + ' due to error ' + self.serializeError(error));
-    });    
+    });
+
+    this.scrollToBottom();    
+  }
+
+  ngAfterViewChecked() {        
+    this.scrollToBottom();        
+  }
+
+  scrollToBottom(): void {
+    try {
+        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+    } catch(err) { }                 
   }
 
   private consoleLog(messageText:string): void{

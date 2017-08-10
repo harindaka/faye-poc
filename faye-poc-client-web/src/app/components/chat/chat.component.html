@@ -1,3 +1,5 @@
-<ul>
-  <li *ngFor="let m of model.messages">{{ m.text }}</li>
-</ul>
+<div #scrollMe style="overflow: auto; height: 500px;">
+  <ul>
+    <li *ngFor="let m of model.messages">{{ m.text }}</li>
+  </ul>
+</div>
