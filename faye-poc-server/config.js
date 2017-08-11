@@ -15,6 +15,9 @@ module.exports = {
     topics: {
         "/mytopic": {
             //topic server side configuration goes here
+        },
+        "/chat": {
+            //topic server side configuration goes here
         }
     },
 
