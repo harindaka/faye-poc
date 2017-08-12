@@ -47,7 +47,7 @@ export class ChatComponent implements OnInit {
         text: messageText
     });
 
-    this.scrollService.scrollTo('#messageInput');
+    this.scrollService.scrollTo('#scrollAnchor');
   }
 
   private serializeError(error): string{

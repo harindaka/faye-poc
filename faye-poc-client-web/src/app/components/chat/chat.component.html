@@ -1,23 +1,25 @@
 <div class="container">
-	
-        <!--msgbox-->
-  		
-  		<div id="msgItems" class="container-fluid">
-  			<div id="chat-item" class="row" *ngFor="let m of model.messages">
-      			<div class="col-12">                      
-                  <p><img src="http://placehold.it/30X30" class="img-circle img-responsive">
-                  {{ m.text }}
-                  </p>
-      			</div>
-  			</div>        
-     	</div>
-          
-        <div id="messageInput" class="row">         	
-            <div class="col-10">
+    <div class="container-fluid">
+        <div id="chat-item" class="row" *ngFor="let m of model.messages">
+            <div class="col-12">                      
+                <p><img src="http://placehold.it/30X30" class="img-circle img-responsive">
+                {{ m.text }}
+                </p>
+            </div>
+        </div>        
+    </div>
+    <div style="height:50px" id="scrollAnchor"></div> 
+</div>
+
+<nav class="navbar fixed-bottom navbar-light bg-faded">
+    <div class="container">
+        <div class="row">         	
+            <div class="col-11" style="padding: 0 !important;">
                 <input type="text" class="form-control" placeholder="Type your Message Here">
             </div>      
             <div class="col-1"  style="padding: 0 !important;">
                 <button class="btn btn-small btn-primary" (click)="onSendClicked()">Send</button>
             </div>          
         </div>
-</div>
+    </div>
+</nav>
