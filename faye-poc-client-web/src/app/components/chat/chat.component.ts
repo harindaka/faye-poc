@@ -1,4 +1,5 @@
 import { Component, AfterViewChecked, ElementRef, ViewChild, OnInit } from '@angular/core';
+import { ScrollToService } from 'ng2-scroll-to-el';
 
 declare var Faye: any;
 
@@ -7,13 +8,11 @@ declare var Faye: any;
   templateUrl: './chat.component.html',
   styleUrls: ['./chat.component.css']
 })
-export class ChatComponent implements OnInit {
-  @ViewChild('scrollMe') private scrollContainer: ElementRef;
-
+export class ChatComponent implements OnInit {    
   model: any = {};
   fayeClient: any = null;
 
-  constructor() {
+  constructor(private scrollService: ScrollToService) {
     this.model.messages = [];
     this.fayeClient = new Faye.Client('http://localhost:3000/messages');
   }
@@ -37,24 +36,18 @@ export class ChatComponent implements OnInit {
     }, function(error){
         self.consoleLog('Unable to subscribe to topic ' + topicUrl + ' due to error ' + self.serializeError(error));
     });
-
-    this.scrollToBottom();    
   }
 
-  ngAfterViewChecked() {        
-    this.scrollToBottom();        
-  }
-
-  scrollToBottom(): void {
-    try {
-        this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
-    } catch(err) { }                 
+  onSendClicked(){
+    
   }
 
   private consoleLog(messageText:string): void{
     this.model.messages.push({
         text: messageText
     });
+
+    this.scrollService.scrollTo('#messageInput');
   }
 
   private serializeError(error): string{

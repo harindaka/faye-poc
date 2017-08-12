@@ -5,6 +5,8 @@ import { AppComponent } from './app.component';
 import { ChatComponent } from './components/chat/chat.component';
 import { MessageLogComponent } from './components/message-log/message-log.component';
 
+import { ScrollToModule } from 'ng2-scroll-to-el';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -12,7 +14,8 @@ import { MessageLogComponent } from './components/message-log/message-log.compon
     MessageLogComponent
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    ScrollToModule.forRoot()
   ],
   providers: [],
   bootstrap: [AppComponent]
