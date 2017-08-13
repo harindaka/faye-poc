@@ -10,6 +10,7 @@
     fayeServer.addExtension({
         incoming: function(message, callback) {
             if (message.channel === '/meta/subscribe') {                
+                console.log('Received subscription request: ' + JSON.stringify(message))
                 if(!config.topics[message.subscription]){
                     message.error = buildError('E0000'); 
                 } else if (!isAuthorized(message)){

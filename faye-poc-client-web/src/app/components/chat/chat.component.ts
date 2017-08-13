@@ -1,5 +1,6 @@
 import { Component, AfterViewChecked, ElementRef, ViewChild, OnInit } from '@angular/core';
 import { ScrollToService } from 'ng2-scroll-to-el';
+import { ConfigService } from '../../services/config.service';
 
 declare var Faye: any;
 
@@ -11,38 +12,58 @@ declare var Faye: any;
 export class ChatComponent implements OnInit {    
   model: any = {};
   fayeClient: any = null;
+  fayeConfig: any = null;  
 
-  constructor(private scrollService: ScrollToService) {
-    this.model.messages = [];
-    this.fayeClient = new Faye.Client('http://localhost:3000/messages');
+  constructor(
+    private scrollService: ScrollToService,
+    private configService: ConfigService) {
+    this.model.messages = [];    
+    this.model.messageToSend = '';
   }
 
   ngOnInit() {
-    let topicUrl = '/mytopic';
+    let config = this.configService.getConfig();
+    this.fayeConfig = config.server.faye;
+    this.fayeClient = new Faye.Client(this.fayeConfig.baseUrl);
+    
     var self = this;
-    this.fayeClient.subscribe(topicUrl, function(message){
+    this.fayeClient.subscribe(this.fayeConfig.topics.chat.url, function(message){
       var messageText = '';
-      if(message.clientId === null){
-        self.consoleLog('Received: ' + message.text + ' from server (' + message.publishedMessageCount + ' messages published)');          
+      if(message.senderName){
+        self.appendChat(message.senderName + ' >> ' + message.text);
       }
       else{
-        self.consoleLog('Received: ' + message.text + ' from client ' + message.clientId + ' (' + message.publishedMessageCount + ' messages published)');
+        self.appendChat(message.text);
       }        
     }).then(function(){  
-        var clientId = 'guid.raw()';
-
-        self.consoleLog('Subscribed to ' + topicUrl + ' as client instance ' + clientId);
-        self.consoleLog('Waiting for messages...');
+               
+        
     }, function(error){
-        self.consoleLog('Unable to subscribe to topic ' + topicUrl + ' due to error ' + self.serializeError(error));
+        self.appendChat('Unable to subscribe to topic ' + this.fayeConfig.topics.chat.url + ' due to error ' + self.serializeError(error));
     });
   }
 
   onSendClicked(){
-    
+    if(this.model.messageToSend != null && this.model.messageToSend.trim() != ''){
+      let self = this;    
+      let message = { 
+          text: this.model.messageToSend        
+      };
+
+      this.model.messageToSend = '';
+      
+      this.fayeClient.publish(this.fayeConfig.topics.chat.url, message, {
+          deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+          attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+      }).then(function(){
+          
+      }, function(error){
+          self.appendChat('The server explicitly rejected publishing your message which was sent due to error: ' + error.message);
+      });
+    }
   }
 
-  private consoleLog(messageText:string): void{
+  private appendChat(messageText:string): void{
     this.model.messages.push({
         text: messageText
     });

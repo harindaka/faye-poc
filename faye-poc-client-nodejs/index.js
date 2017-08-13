@@ -14,7 +14,7 @@
         console.log('This client is online');
     });
 
-    var topicUrl = '/mytopic';
+    var topicUrl = '/log';
     fayeClient.subscribe(topicUrl, function(message){
         if(message.clientId === null){
             console.log('Received: ' + message.text + ' from server (' + message.publishedMessageCount + ' messages published)');

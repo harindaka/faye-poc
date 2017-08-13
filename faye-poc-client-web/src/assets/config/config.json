@@ -1,0 +1,12 @@
+{
+    "server": {
+        "faye": {
+            "baseUrl": "http://localhost:3000/messages", 
+            "topics": {
+                "chat": { 
+                    "url": "/chat"
+                }
+            }
+        }
+    }
+}

@@ -13,7 +13,7 @@ module.exports = {
     },
     
     topics: {
-        "/mytopic": {
+        "/log": {
             //topic server side configuration goes here
         },
         "/chat": {

@@ -4,5 +4,14 @@
     Welcome to {{title}}!
   </p>
 </div>
-<app-chat></app-chat>
+<div *ngIf="model.initStatus == model.InitStatus.Pending">
+  <p>App is initializing. Please wait...</p>
+</div>
+<div *ngIf="model.initStatus == model.InitStatus.Success">
+  <app-chat></app-chat>
+</div>
+<div *ngIf="model.initStatus == model.InitStatus.Error">
+  <p>App failed to initialize due to error: {{ model.InitError.message }}</p>
+</div>
+
 
