@@ -5,19 +5,32 @@
     var httpServer = http.createServer();
 
     var faye = require('faye');
-    var fayeServer = new faye.NodeAdapter(config.server.faye);
+    var fayeServer = new faye.NodeAdapter(config.server.faye.options);
 
     fayeServer.addExtension({
         incoming: function(message, callback) {
             if (message.channel === '/meta/subscribe') {                
                 console.log('Received subscription request: ' + JSON.stringify(message))
-                if(!config.topics[message.subscription]){
-                    message.error = buildError('E0000'); 
+                if(!config.server.faye.topics[message.subscription]){
+                    message.error = buildError('E404'); 
                 } else if (!isAuthorized(message)){
-                    message.error = buildError('E0001');
+                    message.error = buildError('E401');
                 }
-            }
+            } else if(message.channel === '/chat'){
+                console.log('Intercepted incoming message: ' + JSON.stringify(message));                                
+                if(message.ext && message.ext.token){
+                    //Todo: validate token and set senderName field
+                    message.senderName = message.ext.token;
+                } else {
+                    message.error = buildError('E401')
+                }                           
+            } 
             
+            callback(message);
+        },
+
+        outgoing: function(message, callback){
+            delete message.ext;
             callback(message);
         }
     });
@@ -55,9 +68,6 @@
     };
 
     function buildError(errorCode){
-        return {
-            code: errorCode,
-            message: config.errors[errorCode]
-        }
+        return '(' + errorCode + ') ' + config.errors[errorCode];        
     }
 })();

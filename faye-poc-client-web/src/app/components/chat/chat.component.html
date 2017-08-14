@@ -1,12 +1,18 @@
-<div class="container">
-    <div class="container-fluid">
-        <div id="chat-item" *ngFor="let m of model.messages" class="row" style="margin-bottom:5px !important;">
-            <div class="col-12">                      
-                <img src="http://placehold.it/30X30" class="img-circle img-responsive">
-                {{ m.text }}                
-            </div>
-        </div>        
+<div class="container">    
+    <div class="row">
+        <div class="col-10">
+            <input type="text" maxlength="10" focus="true" [(ngModel)]="model.nickname" (keyup.enter)="onJoinLeaveClicked(model.joinLeaveCaption)" class="form-control" placeholder="Enter Nickname">
+        </div>
+        <div class="col-1" style="padding: 0 !important;">
+            <button class="btn btn-small btn-primary" (click)="onJoinLeaveClicked(model.joinLeaveCaption)">{{ model.joinLeaveCaption }}</button>
+        </div>  
     </div>
+    <div *ngFor="let m of model.messages" class="row" style="margin-bottom:5px !important;">
+        <div class="col-12">                      
+            <img src="http://placehold.it/30X30" class="img-circle img-responsive">
+            {{ m.text }}                
+        </div>
+    </div>    
     <div style="height:70px" id="scrollAnchor"></div> 
 </div>
 
@@ -14,7 +20,7 @@
     <div class="container">
         <div class="row">         	
             <div class="col-11" style="padding: 0 !important;">
-                <input type="text" maxlength="100" focus="true" [(ngModel)]="model.messageToSend" (keyup.enter)="onSendClicked()" class="form-control" placeholder="Type your Message Here">
+                <input type="text" maxlength="100" [(ngModel)]="model.messageToSend" (keyup.enter)="onSendClicked()" class="form-control" placeholder="Type Your Message Here">
             </div>      
             <div class="col-1" style="padding: 0 !important;">
                 <button class="btn btn-small btn-primary" (click)="onSendClicked()">Send</button>

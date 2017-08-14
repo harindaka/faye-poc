@@ -1,4 +1,4 @@
-import { Component, AfterViewChecked, ElementRef, ViewChild, OnInit } from '@angular/core';
+import { Component, AfterViewChecked, ElementRef, ViewChild, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ScrollToService } from 'ng2-scroll-to-el';
 import { ConfigService } from '../../services/config.service';
 
@@ -12,13 +12,17 @@ declare var Faye: any;
 export class ChatComponent implements OnInit {    
   model: any = {};
   fayeClient: any = null;
-  fayeConfig: any = null;  
+  fayeConfig: any = null; 
+  nickname: string = null; 
+  private token: string = null;
 
   constructor(
     private scrollService: ScrollToService,
-    private configService: ConfigService) {
+    private configService: ConfigService,
+    private changeDetectorRef: ChangeDetectorRef) {
     this.model.messages = [];    
     this.model.messageToSend = '';
+    this.model.joinLeaveCaption = "Join"
   }
 
   ngOnInit() {
@@ -41,6 +45,16 @@ export class ChatComponent implements OnInit {
     }, function(error){
         self.appendChat('Unable to subscribe to topic ' + this.fayeConfig.topics.chat.url + ' due to error ' + self.serializeError(error));
     });
+
+    this.fayeClient.subscribe(this.fayeConfig.topics.chatMeta.url, function(message){
+      if(message.join && message.join.token){
+        self.token = message.join.token
+      }        
+    }).then(function(){  
+      
+    }, function(error){
+      self.appendChat('Unable to subscribe to topic ' + this.fayeConfig.topics.chat.url + ' due to error ' + self.serializeError(error));
+    });
   }
 
   onSendClicked(){
@@ -58,7 +72,43 @@ export class ChatComponent implements OnInit {
       }).then(function(){
           
       }, function(error){
-          self.appendChat('The server explicitly rejected publishing your message which was sent due to error: ' + error.message);
+        self.appendChat('The server explicitly rejected publishing your message which was sent due to error: ' + error.message);        
+      });
+    }
+  }
+
+  onJoinLeaveClicked(command: string){
+    var self = this;
+    
+    if(command == "Join"){
+      let message = {
+        join: {
+          nickname: this.nickname
+        }
+      }
+
+      this.fayeClient.publish(this.fayeConfig.topics.chatMeta.url, message, {
+          deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+          attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+      }).then(function(){
+          self.model.joinLeaveCaption = "Leave";
+      }, function(error){
+          self.appendChat('Unable to join due to error: ' + error.message);
+      });
+    }else{
+      let message = {
+        leave: {}
+      }
+
+      this.fayeClient.publish(this.fayeConfig.topics.chatMeta.url, message, {
+          deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+          attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+      }).then(function(){
+          self.token = null;
+          self.model.joinLeaveCaption = "Join";
+          self.appendChat('You left the chat');
+      }, function(error){
+          self.appendChat('Unable to leave due to error: ' + error.message);
       });
     }
   }
@@ -67,6 +117,8 @@ export class ChatComponent implements OnInit {
     this.model.messages.push({
         text: messageText
     });
+
+    this.changeDetectorRef.detectChanges();
 
     this.scrollService.scrollTo('#scrollAnchor');
   }

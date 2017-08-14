@@ -5,6 +5,9 @@
             "topics": {
                 "chat": { 
                     "url": "/chat"
+                },
+                "chatMeta": {
+                    "url": "/chat/meta"
                 }
             }
         }
