@@ -16,7 +16,7 @@
                 } else if (!isAuthorized(message)){
                     message.error = buildError('E401');
                 }
-            } else if(message.channel === '/chat'){
+           } else if(message.channel === '/chat'){
                 console.log('Intercepted incoming message: ' + JSON.stringify(message));                                
                 if(message.ext && message.ext.token){
                     //Todo: validate token and set senderName field
@@ -24,7 +24,20 @@
                 } else {
                     message.error = buildError('E401')
                 }                           
-            } 
+            } else{
+                var matches = message.channel.match(/^\/chat\/users\/[a-zA-Z0-9]{1,15}$/g);
+                if(matches !== null && matches.length === 1){
+                    console.log('Intercepted incoming message: ' + JSON.stringify(message));                                
+                    if(message.ext && message.ext && message.){
+                        //Todo: validate token and set senderName field
+                        message.senderName = message.ext.token;
+                    } else {
+                        message.error = buildError('E401')
+                    } 
+                }
+
+                                          
+            }  
             
             callback(message);
         },

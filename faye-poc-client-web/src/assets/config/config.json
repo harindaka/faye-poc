@@ -6,8 +6,8 @@
                 "chat": { 
                     "url": "/chat"
                 },
-                "chatMeta": {
-                    "url": "/chat/meta"
+                "chatUsers": {
+                    "url": "/chat/users"
                 }
             }
         }
