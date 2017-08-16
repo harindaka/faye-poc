@@ -24,9 +24,17 @@ module.exports = {
             }
         }
     },
+
+    dataStore: {
+        options: { 
+            host: 'localhost', 
+            port: 6379
+        } 
+    },
     
     errors: {
         E404: 'Topic not found',
-        E401: 'Unauthorized'
+        E401: 'Unauthorized',
+        E409: 'Duplicate nickname'
     }
 }

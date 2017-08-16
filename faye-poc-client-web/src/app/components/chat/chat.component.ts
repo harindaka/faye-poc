@@ -42,7 +42,7 @@ export class ChatComponent implements OnInit {
       }).then((subscription) => {
         self.session.chatSubscription = subscription;
         self.model.joinLeaveCaption = "Leave";
-      }).catch((error) => {
+      }, (error) => {
         if(self.session && self.session.userSubscription){
           self.session.userSubscription.cancel();
         }
@@ -60,7 +60,8 @@ export class ChatComponent implements OnInit {
       self.appendAppMessage("Invalid username entered. Please try again");
     } else if(self.model.messageToSend != null && self.model.messageToSend.trim() != ''){      
       let message = { 
-          text: self.model.messageToSend        
+        meta: { type: 'chat' },
+        text: self.model.messageToSend        
       };
 
       self.model.messageToSend = '';
@@ -68,7 +69,7 @@ export class ChatComponent implements OnInit {
       self.fayeClient.publish(self.fayeConfig.topics.chat.url, message, {
           deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
           attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-      }).catch((error) => {
+      }, (error) => {
         self.appendAppMessage('The server explicitly rejected publishing your message which was sent due to error: ' + error.message);        
       });
     }
@@ -84,7 +85,7 @@ export class ChatComponent implements OnInit {
           switch(message.meta.type){
             case "auth-token": 
               resolve({
-                token: message.token,
+                token: message.authToken,
                 userSubscription: subscription
               });
               break;

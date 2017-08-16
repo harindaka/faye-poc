@@ -14,6 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "faye": "1.2.4",
-    "faye-redis": "0.2.0"
+    "faye-redis": "0.2.0",
+    "redis": "^2.8.0"
   }
 }
