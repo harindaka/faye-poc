@@ -55,6 +55,7 @@ export class ChatComponent implements OnInit {
 
   onSendClicked(){
     var self = this;
+
     if(!self.model.nickname || !(/^[a-zA-Z0-9]{1,15}$/.test(self.model.nickname))){
       self.appendAppMessage("Invalid username entered. Please try again");
     } else if(self.model.messageToSend != null && self.model.messageToSend.trim() != ''){      
@@ -74,29 +75,45 @@ export class ChatComponent implements OnInit {
   }
 
   private subscribeToUserChannel(): Promise<any>{
+    var self = this;
+    
     return new Promise((resolve, reject)=> {
-      var self = this;
-      let subscription = this.fayeClient.subscribe(this.fayeConfig.topics.chatUsers.url + "/" + self.model.nickname, function(message){
+      let topicUrl = self.fayeConfig.topics.chatUsers.url + "/" + self.model.nickname;
+      let subscription = self.fayeClient.subscribe(topicUrl, function(message){
         if(message && message.meta && message.meta.type){
           switch(message.meta.type){
             case "auth-token": 
               resolve({
-                token: message.data.token,
+                token: message.token,
                 userSubscription: subscription
               });
               break;
           }
         }
-      }).catch((error) =>{
-          reject(error);
+      });
+      
+      subscription.then(() => {
+        let authTokenRequestMessage = {
+          meta: {
+            type: 'auth-token-request'
+          }
+        };
+
+        return self.fayeClient.publish(topicUrl, authTokenRequestMessage, {
+          deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+          attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+        });
+      }, (error) => {
+        reject(error);
       });
     });
   }
 
   private subscribeToChatChannel(): Promise<any>{
-    return new Promise((resolve, reject)=> {
-      var self = this;
-      let subscription = this.fayeClient.subscribe(this.fayeConfig.topics.chat.url, function(message){
+    var self = this;
+    
+    return new Promise((resolve, reject)=> {      
+      let subscription = self.fayeClient.subscribe(self.fayeConfig.topics.chat.url, function(message){
         if(message && message.meta && message.meta.type){
           switch(message.meta.type){
             case "chat":
@@ -106,8 +123,8 @@ export class ChatComponent implements OnInit {
               break;
           }
         }
-      }).catch((error) =>{
-          reject(error);
+      }, (error) => {
+        reject(error);
       });
 
       resolve(subscription);
