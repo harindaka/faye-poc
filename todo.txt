@@ -1,6 +1,3 @@
-client id
-include type of client in message
-Chat (switch topic)
 Nginx keepalive ping and scaling
 Swift iOS client
 Kotlin/Java Android client
