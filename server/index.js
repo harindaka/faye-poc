@@ -16,13 +16,11 @@
 
     fayeServer.addExtension({
         incoming: function(message, callback) {
-            if (message.channel === '/meta/subscribe') {                
-                console.log('Intercepted subscription request: ' + JSON.stringify(message))
-                
+            if (message.channel === '/meta/subscribe') {
                 var matches = message.subscription.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
                 if(matches !== null && matches.length > 0){
                     var incomingNickname = matches[1];
-                    console.log('Received authentication request for ' + incomingNickname); 
+                    console.log('[' + incomingNickname + '][' + message.subscription + '] Received subscription request'); 
 
                     dataStore.reserveNickname(incomingNickname).then((isSuccess) => {
                         if(!isSuccess){
@@ -35,17 +33,27 @@
                     }).then(() => {
                         callback(message);
                     }, (error) => {
+                        console.log('[' + incomingNickname + '][' + message.subscription + '] Failed to subscribe user due to error: ' + error.message);
                         message.error = error.message;
                         callback(message);
                     });
-                }   
-                else if(!config.server.faye.topics[message.subscription]){
-                    message.error = buildError('E404').message; 
+                } 
+                else if(config.server.faye.topics[message.subscription]){
+                    //Todo: validate token get incomingNickname from token and format log entry
+                    console.log('[' + message.subscription + '] Received subscription request');                     
+                    callback(message);
+                }  
+                else {
+                    message.error = buildError('E404').message;
+                    console.log('[' + message.subscription + '] Failed to subscribe to requested channel due to error: ' + message.error);                     
                     callback(message);
                 }
-                
-           } else if(message.channel === '/chat'){
-                console.log('Intercepted chat: ' + JSON.stringify(message));                                
+            } else if(message.channel.startsWith('/meta/')){
+                callback(message);
+            } else if(message.channel === '/chat'){
+
+                //Todo: Format log message with incomingNickname
+                console.log('[' + message.channel + '] Received chat: ' + JSON.stringify(message));                                
 
                 var incomingAuthToken = null;
                 if(message.meta){
@@ -54,11 +62,13 @@
                 
                 tokenUtil.decrypt(incomingAuthToken).then((tokenData) => {
                     if(tokenData === null){
-                        console.log('Received invalid token: ' + message.meta.authToken);
+                        //Todo: Format log message with incomingNickname
+                        console.log('[' + message.channel + '] Received invalid token: ' + message.meta.authToken);
                         throw buildError('E401');
                     }
                     else if(tokenData.expiration <= new Date()){
-                        console.log('Received expired token: ' + message.meta.authToken);
+                        //Todo: Format log message with incomingNickname
+                        console.log('[' + message.channel + '] Received expired token: ' + message.meta.authToken);
                         throw buildError('E401');
                     }
 
@@ -67,42 +77,15 @@
                     message.error = error.message;
                     callback(message);
                 });                                          
+            
             } else {                
                 var matches = message.channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
-                
-                if(matches !== null && matches.length > 0 
-                    && message.data.meta && message.data.meta.type
-                    && message.data.meta.type === 'auth-token-request'){
-                    
-                    console.log('Intercepted auth-token-request: ' + JSON.stringify(message));
-                    
-                    var incomingNickname = matches[1];
+                if(matches === null || matches.length <= 0){
+                    message.error = buildError('E404').message;
+                    console.log('[' + message.subscription + '] Failed to publish to requested channel due to error: ' + message.error);                                         
+                } 
 
-                    var tokenMessage = { 
-                        meta: {
-                            type: 'auth-token'
-                        }, 
-                        authToken: ''
-                    };
-
-                    dataStore.getAuthToken(incomingNickname).then((authToken) => {
-                        tokenMessage.authToken = authToken;                    
-
-                        return serverSideFayeClient.publish(message.channel, tokenMessage, {
-                            deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-                            attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-                        });
-                    }).then(() => {
-                        console.log('Published auth-token message ' + JSON.stringify(tokenMessage) + ' on channel ' + message.channel);
-                    }, (error) => {
-                        console.log('Server error occurred: ' + error.message);
-                        message.error = error.message; 
-                        callback(message);
-                    });                   
-                }
-                else{
-                    callback(message);
-                }
+                callback(message);               
             }
         },
 
@@ -112,13 +95,68 @@
         }
     });
 
+    fayeServer.on('subscribe', function(message, channel) {
+        if(channel === '/chat'){
+            //Todo: implement user Join Message             
+        }else {
+            var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
+            if(matches !== null && matches.length > 0){                        
+                var incomingNickname = matches[1];
+                
+                var tokenMessage = { 
+                    meta: {
+                        type: 'auth-token'
+                    }, 
+                    authToken: ''
+                };
+
+                dataStore.getAuthToken(incomingNickname).then((authToken) => {
+                    tokenMessage.authToken = authToken;                    
+
+                    return serverSideFayeClient.publish(channel, tokenMessage, {
+                        deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+                        attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+                    });
+                }).then(() => {
+                    console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
+                }, (error) => {
+                    console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
+                });                   
+            }
+        }
+    });
+
+    fayeServer.on('unsubscribe', function(message, channel) {
+        var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);                
+        if(matches !== null && matches.length > 0){                        
+            var incomingNickname = matches[1];
+            var userLeaveMessage = { 
+                meta: {
+                    type: 'chat'
+                }, 
+                text: incomingNickname + ' left the chat'
+            };
+
+            dataStore.removeNickname(incomingNickname).then(() => {
+                return serverSideFayeClient.publish(channel, userLeaveMessage, {
+                    deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+                    attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+                });
+            }).then(() => {
+                console.log('[' + incomingNickname + '][' + channel + '] Published chat: ' + JSON.stringify(userLeaveMessage));
+            }, (error) => {
+                console.log('[' + incomingNickname + '][' + channel + '] Failed to publish chat ' + JSON.stringify(userLeaveMessage) + ' due to error: ' + error.message);                
+            });                   
+        }
+    });
+
     fayeServer.attach(httpServer);
     httpServer.listen(config.server.port, (error) => {
         if(error){
-            console.log(error);
+            console.log('Failed to initialize http server due to error: ' + error.message);
         }
         else{
-            console.log('Listening on port ' + config.server.port);
+            console.log('Successfully initialized server on port ' + config.server.port);
 
             // var publishedMessageCount = 0;
             // setInterval(() => {          

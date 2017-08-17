@@ -27,6 +27,22 @@ module.exports = function(config){
         });
     };
 
+    self.removeNickname = function(nickname){
+        return new Promise((resolve, reject) => {
+            redis.hdel(nicknameCollectionName, nickname, function(error, result) {
+                try{
+                    if(error){
+                        reject(error);
+                    } else {
+                        resolve();
+                    }
+                } catch(e){
+                    reject(e);
+                }
+            });
+        });
+    };
+
     self.updateAuthToken = function(nickname, authToken){
         return new Promise((resolve, reject) => {
             redis.hmset(nicknameCollectionName, nickname, authToken, function(error, result) {

@@ -35,6 +35,6 @@ module.exports = {
     errors: {
         E404: 'Topic not found',
         E401: 'Unauthorized',
-        E409: 'Duplicate nickname'
+        E409: 'Nickname already in use'
     }
 }

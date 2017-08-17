@@ -11,9 +11,8 @@ declare var Faye: any;
 })
 export class ChatComponent implements OnInit {    
   model: any = {};
-  fayeClient: any = null;
-  fayeConfig: any = null; 
-  nickname: string = null; 
+  private fayeClient: any = null;
+  private fayeConfig: any = null; 
   private session: any = {};
 
   constructor(
@@ -28,7 +27,6 @@ export class ChatComponent implements OnInit {
   ngOnInit() {
     let config = this.configService.getConfig();
     this.fayeConfig = config.server.faye;
-    this.fayeClient = new Faye.Client(this.fayeConfig.baseUrl);
   } 
 
   onJoinLeaveClicked(command: string){
@@ -36,18 +34,25 @@ export class ChatComponent implements OnInit {
     
     self.session = null;
     if(command == "Join"){
-      self.subscribeToUserChannel().then((session)=>{
-        self.session = session;
-        return self.subscribeToChatChannel();
-      }).then((subscription) => {
-        self.session.chatSubscription = subscription;
-        self.model.joinLeaveCaption = "Leave";
-      }, (error) => {
-        if(self.session && self.session.userSubscription){
-          self.session.userSubscription.cancel();
-        }
-        self.appendAppMessage("Unable to join chat due to error: " + error.message);
-      });
+      if(!self.model.nickname || !(/^[a-zA-Z0-9]{1,15}$/.test(self.model.nickname))){
+        self.appendAppMessage("Invalid username entered. Please try again");
+      } else {
+        self.unsubscribe();
+        self.fayeClient = new Faye.Client(this.fayeConfig.baseUrl);
+
+        self.subscribeToUserChannel().then((session)=>{
+          self.session = session;
+          return self.subscribeToChatChannel();
+        }).then((subscription) => {
+          self.session.chatSubscription = subscription;
+          self.model.joinLeaveCaption = "Leave";
+        }, (error) => {
+          if(self.session && self.session.userSubscription){
+            self.session.userSubscription.cancel();
+          }
+          self.appendAppMessage("Unable to join chat due to error: " + error.message);
+        });
+      }
     }else{
       self.unsubscribe();
     }
@@ -56,9 +61,10 @@ export class ChatComponent implements OnInit {
   onSendClicked(){
     var self = this;
 
-    if(!self.model.nickname || !(/^[a-zA-Z0-9]{1,15}$/.test(self.model.nickname))){
-      self.appendAppMessage("Invalid username entered. Please try again");
-    } else if(self.model.messageToSend != null && self.model.messageToSend.trim() != ''){      
+    if(self.model.joinLeaveCaption = "Leave" 
+      && self.model.messageToSend != null 
+      && self.model.messageToSend.trim() != ''){      
+      
       let message = { 
         meta: { type: 'chat' },
         text: self.model.messageToSend        
@@ -124,11 +130,11 @@ export class ChatComponent implements OnInit {
               break;
           }
         }
+      }).then(() => {
+        resolve(subscription);
       }, (error) => {
         reject(error);
-      });
-
-      resolve(subscription);
+      });      
     });
   }
 
@@ -144,8 +150,15 @@ export class ChatComponent implements OnInit {
       }
     }
 
-    self.model.joinLeaveCaption = "Join";
-    self.appendAppMessage("You left the chat");
+    if(self.fayeClient && self.fayeClient !== null){
+      self.fayeClient.disconnect();
+      self.fayeClient = null;
+    }
+
+    if(self.model.joinLeaveCaption !== "Join"){
+      self.model.joinLeaveCaption = "Join";
+      self.appendAppMessage("You left the chat");
+    }
   }
 
   private appendChatMessage(message: any): void{
