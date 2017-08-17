@@ -46,6 +46,8 @@ export class ChatComponent implements OnInit {
         }).then((subscription) => {
           self.session.chatSubscription = subscription;
           self.model.joinLeaveCaption = "Leave";
+
+          self.appendAppMessage("You joined the chat");
         }, (error) => {
           if(self.session && self.session.userSubscription){
             self.session.userSubscription.cancel();
@@ -61,7 +63,7 @@ export class ChatComponent implements OnInit {
   onSendClicked(){
     var self = this;
 
-    if(self.model.joinLeaveCaption = "Leave" 
+    if(self.model.joinLeaveCaption === "Leave" 
       && self.model.messageToSend != null 
       && self.model.messageToSend.trim() != ''){      
       

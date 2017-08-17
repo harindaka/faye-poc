@@ -95,35 +95,48 @@
         }
     });
 
-    fayeServer.on('subscribe', function(message, channel) {
-        if(channel === '/chat'){
-            //Todo: implement user Join Message             
-        }else {
-            var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
-            if(matches !== null && matches.length > 0){                        
-                var incomingNickname = matches[1];
-                
-                var tokenMessage = { 
-                    meta: {
-                        type: 'auth-token'
-                    }, 
-                    authToken: ''
-                };
+    fayeServer.on('subscribe', function(message, channel) {        
+        var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
+        if(matches !== null && matches.length > 0){                        
+            var incomingNickname = matches[1];
+            
+            var tokenMessage = { 
+                meta: {
+                    type: 'auth-token'
+                }, 
+                authToken: ''
+            };
 
-                dataStore.getAuthToken(incomingNickname).then((authToken) => {
-                    tokenMessage.authToken = authToken;                    
+            var userJoinMessage = { 
+                meta: {
+                    type: 'chat'
+                }, 
+                text: incomingNickname + ' joined the chat'
+            };
 
-                    return serverSideFayeClient.publish(channel, tokenMessage, {
-                        deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-                        attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-                    });
-                }).then(() => {
-                    console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
-                }, (error) => {
-                    console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
-                });                   
-            }
-        }
+            var chatChannel = '/chat';
+            dataStore.getAuthToken(incomingNickname).then((authToken) => {
+                tokenMessage.authToken = authToken;                    
+
+                return serverSideFayeClient.publish(channel, tokenMessage, {
+                    deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+                    attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+                });
+            }).then(() => {
+                console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
+            }, (error) => {
+                console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
+            }).then(() => {
+                return serverSideFayeClient.publish(chatChannel, userJoinMessage, {
+                    deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+                    attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+                });
+            }).then(() => {
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
+            }, (error) => {
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
+            });                   
+        }        
     });
 
     fayeServer.on('unsubscribe', function(message, channel) {
@@ -137,15 +150,16 @@
                 text: incomingNickname + ' left the chat'
             };
 
+            var chatChannel = '/chat';
             dataStore.removeNickname(incomingNickname).then(() => {
-                return serverSideFayeClient.publish(channel, userLeaveMessage, {
+                return serverSideFayeClient.publish(chatChannel, userLeaveMessage, {
                     deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
                     attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
                 });
             }).then(() => {
-                console.log('[' + incomingNickname + '][' + channel + '] Published chat: ' + JSON.stringify(userLeaveMessage));
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(userLeaveMessage));
             }, (error) => {
-                console.log('[' + incomingNickname + '][' + channel + '] Failed to publish chat ' + JSON.stringify(userLeaveMessage) + ' due to error: ' + error.message);                
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish chat ' + JSON.stringify(userLeaveMessage) + ' due to error: ' + error.message);                
             });                   
         }
     });
