@@ -15,6 +15,7 @@
   "dependencies": {
     "faye": "1.2.4",
     "faye-redis": "0.2.0",
+    "jsonwebtoken": "^7.4.3",
     "redis": "^2.8.0"
   }
 }

@@ -22,6 +22,9 @@ module.exports = {
                     //topic server side configuration goes here
                 }
             }
+        },
+        security: {
+            tokenSecret: "#*$(@)FDG(#*F)#KA!#@)$"
         }
     },
 

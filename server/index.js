@@ -12,7 +12,7 @@
     var dataStore = new DataStore(config);
 
     var TokenUtil = require('./token-util');
-    var tokenUtil = new TokenUtil();
+    var tokenUtil = new TokenUtil(config);
 
     fayeServer.addExtension({
         incoming: function(message, callback) {
@@ -54,29 +54,24 @@
 
                 //Todo: Format log message with incomingNickname
                 console.log('[' + message.channel + '] Received chat: ' + JSON.stringify(message));                                
-
-                var incomingAuthToken = null;
-                if(message.meta){
-                    incomingAuthToken = message.meta.authToken;
-                }
                 
-                tokenUtil.decrypt(incomingAuthToken).then((tokenData) => {
-                    if(tokenData === null){
-                        //Todo: Format log message with incomingNickname
-                        console.log('[' + message.channel + '] Received invalid token: ' + message.meta.authToken);
-                        throw buildError('E401');
-                    }
-                    else if(tokenData.expiration <= new Date()){
-                        //Todo: Format log message with incomingNickname
-                        console.log('[' + message.channel + '] Received expired token: ' + message.meta.authToken);
-                        throw buildError('E401');
-                    }
+                if(message.ext && message.ext.authToken && message.ext.authToken !== null){
+                    tokenUtil.decrypt(message.ext.authToken).then((tokenData) => {
+                        if(tokenData === null){                            
+                            console.log('[' + message.channel + '] Received invalid/expired auth token ' + message.ext.authToken + ' in the incoming message: ' + JSON.stringify(message));
+                            throw buildError('E401');
+                        }
 
+                        callback(message);
+                    }, (error) => {
+                        message.error = error.message;
+                        callback(message);
+                    });
+                } else {
+                    console.log('[' + message.channel + '] No auth token present in the incoming message: ' + JSON.stringify(message));
+                    message.error = buildError('E401').message;
                     callback(message);
-                }, (error) => {
-                    message.error = error.message;
-                    callback(message);
-                });                                          
+                }                                          
             
             } else {                
                 var matches = message.channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
