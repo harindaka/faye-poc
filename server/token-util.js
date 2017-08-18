@@ -1,16 +1,20 @@
 module.exports = function(config){
     var self = this;
     var jwt = require('jsonwebtoken');
-    
-    self.generateToken = function(tokenData){
+
+    self.generateToken = function(tokenData, expiresIn){
         return new Promise((resolve, reject) => {
+            if(!expiresIn){
+                expiresIn = config.server.security.clientTokenExpiresIn;
+            }
+
             try{                
                 jwt.sign(tokenData, config.server.security.tokenSecret, { 
-                    expiresIn: '1m',
-                    algorithm: 'RS512'
+                    expiresIn: expiresIn,
+                    algorithm: 'HS512'
                 }, (error, token) => {
                     if(error){
-                        resolve(null);
+                        reject(error);
                     }
                     else{
                         resolve(token); 
@@ -26,8 +30,8 @@ module.exports = function(config){
         return new Promise((resolve, reject) => {
             try{
                 if(token && token !== null){
-                    jwt.verify(tokenData, config.server.security.tokenSecret, {                     
-                        algorithm: 'RS512'
+                    jwt.verify(token, config.server.security.tokenSecret, {                     
+                        algorithm: 'HS512'
                     }, (error, tokenData) => {
                         if(error){
                             resolve(null);

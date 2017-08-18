@@ -6,13 +6,15 @@
 
     var faye = require('faye');
     var fayeServer = new faye.NodeAdapter(config.server.faye.options);
-    var serverSideFayeClient = fayeServer.getClient();
-
+    
     var DataStore = require('./data-store');
     var dataStore = new DataStore(config);
 
     var TokenUtil = require('./token-util');
     var tokenUtil = new TokenUtil(config);
+
+    var ServersideClient = require('./serverside-client');
+    var serversideClient = new ServersideClient(config, fayeServer, tokenUtil);
 
     fayeServer.addExtension({
         incoming: function(message, callback) {
@@ -27,7 +29,10 @@
                             throw buildError('E409');
                         }
 
-                        return tokenUtil.generateToken(incomingNickname);
+                        return tokenUtil.generateToken({ 
+                            tokenType: "user-auth-token",
+                            nickname: incomingNickname
+                        });
                     }).then((token) => {
                         return dataStore.updateAuthToken(incomingNickname, token);
                     }).then(() => {
@@ -113,23 +118,17 @@
             dataStore.getAuthToken(incomingNickname).then((authToken) => {
                 tokenMessage.authToken = authToken;                    
 
-                return serverSideFayeClient.publish(channel, tokenMessage, {
-                    deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-                    attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-                });
+                return serversideClient.publish(channel, tokenMessage);
             }).then(() => {
                 console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
             }, (error) => {
                 console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
             }).then(() => {
-                return serverSideFayeClient.publish(chatChannel, userJoinMessage, {
-                    deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-                    attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-                });
+                return serversideClient.publish(chatChannel, userJoinMessage);
             }).then(() => {
-                console.log('[' + incomingNickname + '][' + chatChannel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(tokenMessage));                
             }, (error) => {
-                console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish chat ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
             });                   
         }        
     });
@@ -147,10 +146,7 @@
 
             var chatChannel = '/chat';
             dataStore.removeNickname(incomingNickname).then(() => {
-                return serverSideFayeClient.publish(chatChannel, userLeaveMessage, {
-                    deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-                    attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-                });
+                return serversideClient.publish(chatChannel, userLeaveMessage);
             }).then(() => {
                 console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(userLeaveMessage));
             }, (error) => {
@@ -170,7 +166,7 @@
             // var publishedMessageCount = 0;
             // setInterval(() => {          
             //     var topicUrl = '/log';  
-            //     serverSideFayeClient.publish(topicUrl, { 
+            //     serversideClient.publish(topicUrl, { 
             //         text: 'Hello!', 
             //         clientId: null,
             //         publishedMessageCount: publishedMessageCount

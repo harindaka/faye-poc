@@ -24,7 +24,9 @@ module.exports = {
             }
         },
         security: {
-            tokenSecret: "#*$(@)FDG(#*F)#KA!#@)$"
+            tokenSecret: "03f28a2d-e156-4169-a8f6-fb2beaeb6a4b",
+            clientTokenExpiresIn: "1m",
+            serverTokenExpiresIn: "10y"
         }
     },
 
