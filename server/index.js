@@ -37,9 +37,9 @@
                         return dataStore.updateAuthToken(incomingNickname, token);
                     }).then(() => {
                         callback(message);
-                    }, (error) => {
+                    }).catch((error) => {
                         console.log('[' + incomingNickname + '][' + message.subscription + '] Failed to subscribe user due to error: ' + error.message);
-                        message.error = error.message;
+                        message.error = errorToJson(error);
                         callback(message);
                     });
                 } 
@@ -49,7 +49,7 @@
                     callback(message);
                 }  
                 else {
-                    message.error = buildError('E404').message;
+                    message.error = errorToJson(buildError('E404'));
                     console.log('[' + message.subscription + '] Failed to subscribe to requested channel due to error: ' + message.error);                     
                     callback(message);
                 }
@@ -68,20 +68,20 @@
                         }
 
                         callback(message);
-                    }, (error) => {
-                        message.error = error.message;
+                    }).catch((error) => {
+                        message.error = errorToJson(error);
                         callback(message);
                     });
                 } else {
                     console.log('[' + message.channel + '] No auth token present in the incoming message: ' + JSON.stringify(message));
-                    message.error = buildError('E401').message;
+                    message.error = errorToJson(buildError('E401'));
                     callback(message);
                 }                                          
             
             } else {                
                 var matches = message.channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
                 if(matches === null || matches.length <= 0){
-                    message.error = buildError('E404').message;
+                    message.error = errorToJson(buildError('E404'));
                     console.log('[' + message.subscription + '] Failed to publish to requested channel due to error: ' + message.error);                                         
                 } 
 
@@ -121,13 +121,13 @@
                 return serversideClient.publish(channel, tokenMessage);
             }).then(() => {
                 console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
-            }, (error) => {
+            }).catch((error) => {
                 console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
             }).then(() => {
                 return serversideClient.publish(chatChannel, userJoinMessage);
             }).then(() => {
                 console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(tokenMessage));                
-            }, (error) => {
+            }).catch((error) => {
                 console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish chat ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
             });                   
         }        
@@ -149,7 +149,7 @@
                 return serversideClient.publish(chatChannel, userLeaveMessage);
             }).then(() => {
                 console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(userLeaveMessage));
-            }, (error) => {
+            }).catch((error) => {
                 console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish chat ' + JSON.stringify(userLeaveMessage) + ' due to error: ' + error.message);                
             });                   
         }
@@ -175,7 +175,7 @@
             //         attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
             //     }).then(() => {
             //         publishedMessageCount += 1;                    
-            //     }, (error) => {
+            //     }).catch((error) => {
             //         console.log('The server explicitly rejected publishing the message due to error: ' + error.message);
             //     });
             // }, 3000);
@@ -183,6 +183,17 @@
     });
 
     function buildError(errorCode){
-        return new Error('(' + errorCode + ') ' + config.errors[errorCode]);        
+        var error = new Error('(' + errorCode + ') ' + config.errors[errorCode]);
+        error.name = errorCode;
+        
+        return error;        
+    }
+
+    function errorToJson(error){
+        return { 
+            name: error.name, 
+            message: error.message,
+            stack: error.stack
+        };
     }
 })();

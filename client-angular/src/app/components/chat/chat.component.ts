@@ -37,8 +37,7 @@ export class ChatComponent implements OnInit {
       if(!self.model.nickname || !(/^[a-zA-Z0-9]{1,15}$/.test(self.model.nickname))){
         self.appendAppMessage("Invalid username entered. Please try again");
       } else {
-        self.unsubscribe();
-        self.fayeClient = new Faye.Client(this.fayeConfig.baseUrl);
+        self.initializeFayeClient();        
 
         self.subscribeToUserChannel().then((session)=>{
           self.session = session;
@@ -52,7 +51,7 @@ export class ChatComponent implements OnInit {
           if(self.session && self.session.userSubscription){
             self.session.userSubscription.cancel();
           }
-          self.appendAppMessage("Unable to join chat due to error: " + error.message);
+          self.appendAppMessage("Unable to join chat due to error: " + self.getErrorMessage(error));
         });
       }
     }else{
@@ -78,9 +77,37 @@ export class ChatComponent implements OnInit {
           deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
           attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
       }, (error) => {
-        self.appendAppMessage('The server explicitly rejected publishing your message which was sent due to error: ' + error.message);        
+        self.appendAppMessage('The server explicitly rejected publishing your message which was sent due to error: ' + self.getErrorMessage(error));        
       });
     }
+  }
+
+  private initializeFayeClient(): void {
+    var self = this;
+    
+    self.unsubscribe();
+    self.fayeClient = new Faye.Client(this.fayeConfig.baseUrl);
+
+    self.fayeClient.addExtension({
+      incoming: function(message, callback){
+        if(message.error && message.error.name && message.error.name === 'E401'){
+          self.unsubscribe();
+          self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
+        }
+        callback(message);
+      },
+      outgoing: function(message, callback) {
+        if(self.session && self.session.token){
+          if(!message.ext){
+            message.ext = {};
+          }
+
+          message.ext.authToken = self.session.token;
+        }
+
+        callback(message);
+      }        
+    });
   }
 
   private subscribeToUserChannel(): Promise<any>{
@@ -179,5 +206,21 @@ export class ChatComponent implements OnInit {
     this.changeDetectorRef.detectChanges();
 
     this.scrollService.scrollTo('#scrollAnchor');
+  }
+
+  private getErrorMessage(error){
+    if(typeof error === "string"){
+      return error;
+    }
+    else if (typeof error === "object" && error.message) {
+      if(typeof error.message === "string"){
+        return error.message;
+      }
+      else if(typeof error.message === "object" && error.message.message){
+        return error.message.message;
+      }      
+    }
+    
+    return JSON.stringify(error);    
   }
 }
