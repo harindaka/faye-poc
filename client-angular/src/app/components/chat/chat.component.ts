@@ -39,8 +39,7 @@ export class ChatComponent implements OnInit {
       } else {
         self.initializeFayeClient();        
 
-        self.subscribeToUserChannel().then((session)=>{
-          self.session = session;
+        self.subscribeToUserChannel().then(()=>{
           return self.subscribeToChatChannel();
         }).then((subscription) => {
           self.session.chatSubscription = subscription;
@@ -91,7 +90,7 @@ export class ChatComponent implements OnInit {
     self.fayeClient.addExtension({
       incoming: function(message, callback){
         if(message.error && message.error.name && message.error.name === 'E401'){
-          self.unsubscribe();
+          //self.unsubscribe();
           self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
         }
         callback(message);
@@ -118,27 +117,15 @@ export class ChatComponent implements OnInit {
       let subscription = self.fayeClient.subscribe(topicUrl, function(message){
         if(message && message.meta && message.meta.type){
           switch(message.meta.type){
-            case "auth-token": 
-              resolve({
+            case "auth-token":
+              self.session = {
                 token: message.authToken,
                 userSubscription: subscription
-              });
+              }              
+              resolve();
               break;
           }
         }
-      });
-      
-      subscription.then(() => {
-        let authTokenRequestMessage = {
-          meta: {
-            type: 'auth-token-request'
-          }
-        };
-
-        return self.fayeClient.publish(topicUrl, authTokenRequestMessage, {
-          deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-          attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-        });
       }, (error) => {
         reject(error);
       });

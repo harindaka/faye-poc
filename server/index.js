@@ -18,6 +18,8 @@
 
     fayeServer.addExtension({
         incoming: function(message, callback) {
+            console.log('Incoming:' + JSON.stringify(message));
+            
             if (message.channel === '/meta/subscribe') {
                 var matches = message.subscription.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
                 if(matches !== null && matches.length > 0){
@@ -63,7 +65,7 @@
                 if(message.ext && message.ext.authToken && message.ext.authToken !== null){
                     tokenUtil.decrypt(message.ext.authToken).then((tokenData) => {
                         if(tokenData === null){                            
-                            console.log('[' + message.channel + '] Received invalid/expired auth token ' + message.ext.authToken + ' in the incoming message: ' + JSON.stringify(message));
+                            console.log('[' + message.channel + '] Received invalid/expired auth token ' + message.ext.authToken + ' in the incoming message: ' + JSON.stringify(message));                            
                             throw buildError('E401');
                         }
 
@@ -71,11 +73,15 @@
                     }).catch((error) => {
                         message.error = errorToJson(error);
                         callback(message);
+
+                        fayeServer._server._engine.destroyClient(message.clientId, function() {});
                     });
                 } else {
                     console.log('[' + message.channel + '] No auth token present in the incoming message: ' + JSON.stringify(message));
                     message.error = errorToJson(buildError('E401'));
                     callback(message);
+
+                    fayeServer._server._engine.destroyClient(message.clientId, function() {});
                 }                                          
             
             } else {                
@@ -90,6 +96,9 @@
         },
 
         outgoing: function(message, callback){
+            if(message.advice && message.advice.reconnect === 'handshake'){
+                message.advice.reconnect = 'none'
+            }
             delete message.ext;
             callback(message);
         }
