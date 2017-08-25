@@ -1,7 +1,7 @@
 module.exports = function(
     config,
     fayeServer, 
-    tokenUtil){
+    sessionManager){
     var self = this;
     
     var authToken = null;
@@ -34,7 +34,7 @@ module.exports = function(
         return new Promise((resolve, reject) => {
             try{
                 if(authToken === null){
-                    tokenUtil.generateToken({ tokenType: "server-auth-token" }, 
+                    sessionManager.generateToken({ tokenType: "server-auth-token" }, 
                         config.server.security.serverTokenExpiresIn).then((newToken)=>{
                             authToken = newToken
                             resolve(authToken);

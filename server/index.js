@@ -23,15 +23,14 @@
     var sessionManager = new SessionManager(config, fayeServer, serversideClient, tokenUtil, errorUtil);
 
     fayeServer.addExtension({
-        incoming: function(message, callback) {
-            console.log('Incoming:' + JSON.stringify(message));
-            
+        incoming: function(message, callback) {                        
             if (message.channel === '/meta/subscribe') {
                 var matches = message.subscription.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
                 if(matches !== null && matches.length > 0){
                     var incomingNickname = matches[1];
                     console.log('[' + incomingNickname + '][' + message.subscription + '] Received subscription request'); 
 
+                    var newToken = null;
                     dataStore.reserveNickname(incomingNickname).then((isSuccess) => {
                         if(!isSuccess){
                             throw errorUtil.create('E409');
@@ -42,7 +41,11 @@
                             nickname: incomingNickname
                         });
                     }).then((token) => {
-                        return dataStore.updateAuthToken(incomingNickname, token);
+                        newToken = token;
+                        return tokenUtil.decryptToken(token);
+                    }).then((tokenData) => {
+                        sessionManager.enqueueSessionExpiration(message.subscription, message.clientId, tokenData);
+                        return dataStore.updateAuthToken(incomingNickname, newToken);
                     }).then(() => {
                         callback(message);
                     }).catch((error) => {
@@ -52,36 +55,41 @@
                     });
                 } 
                 else if(config.server.faye.topics[message.subscription]){
-                    //Todo: validate token get incomingNickname from token and format log entry
                     console.log('[' + message.subscription + '] Received subscription request');
-                    sessionManager.validateSession(message, message.subscription, message.clientId).then((error) => {
-                        if(error !== null){
-                            message.error = error;
-                        }
+                    sessionManager.validateSession(message).then((tokenData) => {
+                        sessionManager.enqueueSessionExpiration(message.subscription, message.clientId, tokenData);
+                        callback(message);
+                    }).catch((error) => {
+                        console.log('[' + message.subscription + '] Subscription failed due to error: ' + error.message);
+                        message.error = errorUtil.toJson(error);
                         callback(message);
                     });
                 }  
                 else {
-                    message.error = ErrorUtil.toJson(errorUtil.create('E404'));
-                    console.log('[' + message.subscription + '] Failed to subscribe to requested channel due to error: ' + message.error);                     
+                    message.error = errorUtil.toJson(errorUtil.create('E404'));
+                    console.log('[' + message.subscription + '] Failed to subscribe to requested channel due to error: ' + message.error.message);                     
                     callback(message);
                 }
             } else if(message.channel.startsWith('/meta/')){
                 callback(message);
             } else if(message.channel === '/chat'){
-                //Todo: Format log message with incomingNickname
                 console.log('[' + message.channel + '] Received chat: ' + JSON.stringify(message));                                
-                sessionManager.validateSession(message, message.channel, message.clientId).then((error) => {
-                    if(error !== null){
-                        message.error = error;
+                sessionManager.validateSession(message).then((tokenData) => {
+                    if(typeof tokenData.nickname !== 'undefined' && tokenData.nickname !== null){
+                        message.data.sender = tokenData.nickname;
                     }
+
+                    callback(message);
+                }).catch((error) => {
+                    console.log('[' + message.channel + '] Failed to validate session for incoming message due to error: ' + error.message);
+                    message.error = errorUtil.toJson(error);
                     callback(message);
                 });
             } else {                
                 var matches = message.channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
                 if(matches === null || matches.length <= 0){
                     message.error = errorUtil.toJson(errorUtil.create('E404'));
-                    console.log('[' + message.subscription + '] Failed to publish to requested channel due to error: ' + message.error);                                         
+                    console.log('[' + message.subscription + '] Failed to publish to requested channel due to error: ' + message.error.message);                                         
                 } 
 
                 callback(message);               
@@ -97,47 +105,42 @@
         }
     });
 
-    fayeServer.on('subscribe', function(clientId, channel) {        
-        if(channel === '/chat'){
+    fayeServer.on('subscribe', function(clientId, channel) { 
+        var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
+        if(matches !== null && matches.length > 0){                        
+            var incomingNickname = matches[1];
+            
+            var tokenMessage = { 
+                meta: {
+                    type: 'auth-token'
+                }, 
+                authToken: ''
+            };
 
-        }
-        else{
-            var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
-            if(matches !== null && matches.length > 0){                        
-                var incomingNickname = matches[1];
-                
-                var tokenMessage = { 
-                    meta: {
-                        type: 'auth-token'
-                    }, 
-                    authToken: ''
-                };
+            var userJoinMessage = { 
+                meta: {
+                    type: 'chat'
+                }, 
+                text: incomingNickname + ' joined the chat'
+            };
 
-                var userJoinMessage = { 
-                    meta: {
-                        type: 'chat'
-                    }, 
-                    text: incomingNickname + ' joined the chat'
-                };
+            var chatChannel = '/chat';
+            dataStore.getAuthToken(incomingNickname).then((authToken) => {
+                tokenMessage.authToken = authToken;                    
 
-                var chatChannel = '/chat';
-                dataStore.getAuthToken(incomingNickname).then((authToken) => {
-                    tokenMessage.authToken = authToken;                    
-
-                    return serversideClient.publish(channel, tokenMessage);
-                }).then(() => {
-                    console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
-                }).catch((error) => {
-                    console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
-                }).then(() => {
-                    return serversideClient.publish(chatChannel, userJoinMessage);
-                }).then(() => {
-                    console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(tokenMessage));                
-                }).catch((error) => {
-                    console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish chat ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
-                });                   
-            }
-        }        
+                return serversideClient.publish(channel, tokenMessage);
+            }).then(() => {
+                console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
+            }).catch((error) => {
+                console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + error.message);                
+            }).then(() => {
+                return serversideClient.publish(chatChannel, userJoinMessage);
+            }).then(() => {
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(userJoinMessage));                
+            }).catch((error) => {
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish chat ' + JSON.stringify(userJoinMessage) + ' due to error: ' + error.message);                
+            });                   
+        }               
     });
 
     fayeServer.on('unsubscribe', function(clientId, channel) {

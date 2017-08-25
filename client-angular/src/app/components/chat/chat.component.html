@@ -14,7 +14,8 @@
     <div *ngFor="let m of model.messages" class="row" style="margin-bottom:5px !important;">
         <div class="col-12">                      
             <img src="http://placehold.it/30X30" class="img-circle img-responsive">
-            {{ m.text }}                
+            <span *ngIf="!isEmpty(m.sender)">{{ m.sender }} >> </span>
+            <span>{{ m.text }}</span>                
         </div>
     </div>    
     <div style="height:70px" id="scrollAnchor"></div> 

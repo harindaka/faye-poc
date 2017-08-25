@@ -54,7 +54,7 @@ export class ChatComponent implements OnInit {
         });
       }
     }else{
-      self.unsubscribe();
+      self.resetChat(false);
     }
   }
 
@@ -81,17 +81,20 @@ export class ChatComponent implements OnInit {
     }
   }
 
+  isEmpty(value:any): boolean{
+    return (typeof value === 'undefined' || value === null);
+  }
+
   private initializeFayeClient(): void {
     var self = this;
     
-    self.unsubscribe();
+    self.resetChat(false);
     self.fayeClient = new Faye.Client(this.fayeConfig.baseUrl);
 
     self.fayeClient.addExtension({
       incoming: function(message, callback){
         if(message.error && message.error.name && message.error.name === 'E401'){
-          //self.unsubscribe();
-          self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
+          self.resetChat(true);
         }
         callback(message);
       },
@@ -124,8 +127,15 @@ export class ChatComponent implements OnInit {
               }              
               resolve();
               break;
+
+            case "session-expiration":
+              self.resetChat(true);
+              break;
           }
         }
+      });
+      
+      subscription.then(() => {
       }, (error) => {
         reject(error);
       });
@@ -140,21 +150,23 @@ export class ChatComponent implements OnInit {
         if(message && message.meta && message.meta.type){
           switch(message.meta.type){
             case "chat":
-              if(message.text){ 
+              if(message.text){                
                 self.appendChatMessage(message);
               }
               break;
           }
         }
-      }).then(() => {
+      });
+      
+      subscription.then(() => {
         resolve(subscription);
       }, (error) => {
         reject(error);
       });      
     });
   }
-
-  private unsubscribe(): void{
+  
+  private resetChat(isSessionExpired: boolean): void{
     var self = this;
     if(self.session){
       if(self.session.chatSubscription){
@@ -173,7 +185,12 @@ export class ChatComponent implements OnInit {
 
     if(self.model.joinLeaveCaption !== "Join"){
       self.model.joinLeaveCaption = "Join";
-      self.appendAppMessage("You left the chat");
+      if(isSessionExpired){
+        self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
+      }
+      else{
+        self.appendAppMessage("You left the chat");
+      }
     }
   }
 
@@ -181,7 +198,6 @@ export class ChatComponent implements OnInit {
     this.model.messages.push(message);
 
     this.changeDetectorRef.detectChanges();
-
     this.scrollService.scrollTo('#scrollAnchor');
   }
 

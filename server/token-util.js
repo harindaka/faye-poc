@@ -26,24 +26,19 @@ module.exports = function(config){
         })
     }
 
-    self.decrypt = function(token){
+    self.decryptToken = function(token){
         return new Promise((resolve, reject) => {
-            try{
-                if(token && token !== null){
-                    jwt.verify(token, config.server.security.tokenSecret, {                     
-                        algorithm: 'HS512'
-                    }, (error, tokenData) => {
-                        if(error){
-                            resolve(null);
-                        }
-                        else{
-                            resolve(tokenData); 
-                        }
-                    });                    
-                }
-                else{
-                    resolve(null);
-                }
+            try{                
+                jwt.verify(token, config.server.security.tokenSecret, {                     
+                    algorithm: 'HS512'
+                }, (error, tokenData) => {
+                    if(error){
+                        reject(error);
+                    }
+                    else{
+                        resolve(tokenData); 
+                    }
+                });
             }catch(e){
                 reject(e);
             }

@@ -9,41 +9,44 @@ module.exports = function(
 
     var ms = require('ms');
 
-    self.validateSession = function(message, channel, clientId){
+    self.validateSession = function(message){        
         if(message.ext && message.ext.authToken && message.ext.authToken !== null){
-            return tokenUtil.decrypt(message.ext.authToken).then((tokenData) => {
-                if(tokenData === null){         
-                    throw errorUtil.create('E401');
-                }
-
-                return Promise.create(null);
-            }).catch((error) => {
-                console.log('[' + message.channel + '] Received invalid auth token ' + message.ext.authToken + ' in the incoming message: ' + JSON.stringify(message));
-                fayeServer._server._engine.destroyClient(message.clientId, function() {});
-                
-                return Promise.create(errorUtil.toJson(error));                
-            });
+            return tokenUtil.decryptToken(message.ext.authToken);
         } else {
-            console.log('[' + message.channel + '] No auth token present in the incoming message: ' + JSON.stringify(message));
-            fayeServer._server._engine.destroyClient(message.clientId, function() {});
+            return Promise.reject(errorUtil.create('E401'));                
+        }                
+    };
 
-            return Promise.create(errorUtil.create(errorUtil.toJson('E401')));
+    self.enqueueSessionExpiration = function(channel, clientId, tokenData){
+        var d = new Date();
+        var currentTimeInSeconds = Math.round(d.getTime() / 1000);
+        var expirationInSeconds = tokenData.exp - currentTimeInSeconds;
+
+        var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
+        if(matches !== null && matches.length > 0){
+            var nickname = matches[1];
+            
+            setTimeout(function() {
+                var sessionExpirationMessage = { meta: { type: 'session-expiration' } };
+                serversideClient.publish(channel, sessionExpirationMessage).then(() => {
+                    console.log('[' + nickname + '][' + channel + '] Published session-expiration');
+                }).catch((error) => {
+                    console.log('[' + nickname + '][' + channel + '] Failed to publish session-expiration due to error: ' + error.message);                
+                }).then(() => {
+                    setTimeout(function() {
+                        destroyClient(clientId);
+                    }, ms(config.server.security.idleSubscriptionExpirationWindow));
+                });            
+            }, expirationInSeconds * 1000);
+        }
+        else{
+            setTimeout(function() {                
+                destroyClient(clientId);                
+            }, expirationInSeconds * 1000);
         }
     };
 
-    self.enqueueExpiration = function(nickname, clientId){
-        setTimeout(function() {
-            var sessionExpirationMessage = { meta: { type: 'session-expiration' } };
-            var channel = '/chat/users/' + nickname;
-            serversideClient.publish(channel, sessionExpirationMessage).then(() => {
-                console.log('[' + nickname + '][' + channel + '] Published session-expiration');
-            }).catch((error) => {
-                console.log('[' + nickname + '][' + channel + '] Failed to publish session-expiration due to error: ' + error.message);                
-            }).then(() => {
-                setTimeout(function() {
-                    fayeServer._server._engine.destroyClient(clientId, function() {});
-                }, ms(config.server.faye.security.idleSubscriptionExpirationWindow));
-            });            
-        }, ms(config.server.faye.security.clientTokenExpiresIn));
-    };
+    function destroyClient(clientId){
+        fayeServer._server._engine.destroyClient(clientId, function() {});
+    }
 }
