@@ -6,14 +6,16 @@ module.exports = function(
     var self = this;
 
     self.processRequest = function(request, message){
-        try{
-            console.log('[' + request.channelParams.nickname + '][' + request.channel + '] Received message: ' + JSON.stringify(message)); 
-
+        try{            
             if(request.isOnUserChannel || topicIndex[request.channel]){
-                return sessionManager.validateSession(request.authToken).then((tokenData) => {
+                return sessionManager.validateSession(request.authToken).then((tokenData) => {                     
                     if(typeof tokenData.nickname !== 'undefined' && tokenData.nickname !== null){
+                        console.log('[' + tokenData.nickname + '][' + request.channel + '] Received message: ' + JSON.stringify(message.data));
                         message.data.sender = tokenData.nickname;
                     }                
+                    else{
+                        console.log('[' + request.channel + '] Received message: ' + JSON.stringify(message.data));
+                    }
                 });
             } else {
                 return Promise.reject(errorUtil.create('E404'));

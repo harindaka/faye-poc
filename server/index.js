@@ -176,15 +176,15 @@
 
                 return serversideClient.publish(channel, tokenMessage);
             }).then(() => {
-                console.log('[' + incomingNickname + '][' + channel + '] Published auth-token: ' + JSON.stringify(tokenMessage));                
+                console.log('[' + incomingNickname + '][' + channel + '] Published auth-token');                
             }).catch((error) => {
                 console.log('[' + incomingNickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + errorUtil.toMessage(error));                
             }).then(() => {
                 return serversideClient.publish(chatChannel, userJoinMessage);
             }).then(() => {
-                console.log('[' + incomingNickname + '][' + chatChannel + '] Published chat: ' + JSON.stringify(userJoinMessage));                
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Published message: ' + JSON.stringify(userJoinMessage));                
             }).catch((error) => {
-                console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish chat ' + JSON.stringify(userJoinMessage) + ' due to error: ' + errorUtil.toMessage(error));                
+                console.log('[' + incomingNickname + '][' + chatChannel + '] Failed to publish message ' + JSON.stringify(userJoinMessage) + ' due to error: ' + errorUtil.toMessage(error));                
             });                   
         }               
     });
