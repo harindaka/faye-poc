@@ -14,17 +14,20 @@ export class ChatComponent implements OnInit {
   private fayeClient: any = null;
   private fayeConfig: any = null; 
   private session: any = {};
+  private sessionDurationCounterHandle:any = null;
 
   constructor(
     private scrollService: ScrollToService,
     private configService: ConfigService,
-    private changeDetectorRef: ChangeDetectorRef) {
-    this.model.messages = [];    
-    this.model.messageToSend = "";
-    this.model.joinLeaveCaption = "Join"
+    private changeDetectorRef: ChangeDetectorRef) {    
   }
 
   ngOnInit() {
+    this.model.messages = [];    
+    this.model.messageToSend = "";
+    this.model.joinLeaveCaption = "Join"
+    this.model.sessionDurationSeconds = 0;
+
     let config = this.configService.getConfig();
     this.fayeConfig = config.server.faye;
   } 
@@ -44,6 +47,10 @@ export class ChatComponent implements OnInit {
         }).then((subscription) => {
           self.session.chatSubscription = subscription;
           self.model.joinLeaveCaption = "Leave";
+
+          self.sessionDurationCounterHandle = setInterval(function(){
+            self.model.sessionDurationSeconds += 1;
+          }, 1000);
 
           self.appendAppMessage("You joined the chat");
         }, (error) => {
@@ -181,6 +188,11 @@ export class ChatComponent implements OnInit {
     if(self.fayeClient && self.fayeClient !== null){
       self.fayeClient.disconnect();
       self.fayeClient = null;
+    }
+
+    self.model.sessionDurationSeconds = 0;
+    if(self.sessionDurationCounterHandle){
+      clearInterval(self.sessionDurationCounterHandle);
     }
 
     if(self.model.joinLeaveCaption !== "Join"){

@@ -9,9 +9,9 @@ module.exports = function(
 
     var ms = require('ms');
 
-    self.validateSession = function(message){        
-        if(message.ext && message.ext.authToken && message.ext.authToken !== null){
-            return tokenUtil.decryptToken(message.ext.authToken);
+    self.validateSession = function(authToken){        
+        if(authToken){
+            return tokenUtil.decryptToken(authToken);
         } else {
             return Promise.reject(errorUtil.create('E401'));                
         }                
