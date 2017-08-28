@@ -214,13 +214,15 @@ export class ChatComponent implements OnInit {
       clearInterval(self.sessionDurationCounterHandle);
     }
     
-    self.model.joinLeaveCaption = "Join";
-    if(isSessionExpired){
-      self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
-    }
-    else{
-      self.appendAppMessage("You left the chat");
-    }    
+    if(self.model.joinLeaveCaption !== "Join"){
+      self.model.joinLeaveCaption = "Join";
+      if(isSessionExpired){
+        self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
+      }
+      else{
+        self.appendAppMessage("You left the chat");
+      } 
+    }   
   }
 
   private appendChatMessage(message: any): void{
