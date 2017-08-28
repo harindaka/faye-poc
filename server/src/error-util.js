@@ -2,7 +2,7 @@ module.exports = function(config){
     var self = this;
 
     self.create = function(errorCode){
-        var error = new Error('(' + errorCode + ') ' + config.errors[errorCode]);
+        let error = new Error('(' + errorCode + ') ' + config.errors[errorCode]);
         error.name = errorCode;
         
         return error;        

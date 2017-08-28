@@ -19,7 +19,7 @@ module.exports = function(){
         if (message.channel === '/meta/subscribe') {
             parsedRequest.requestType = 'subscription';            
             
-            var nickname = parseNicknamefromUserChannelUrl(message.subscription);
+            let nickname = self.parseNicknamefromUserChannelUrl(message.subscription);
             if(nickname !== null){
                 parsedRequest.isOnUserChannel = true;
                 parsedRequest.channelParams.nickname = nickname;                
@@ -31,7 +31,7 @@ module.exports = function(){
             parsedRequest.requestType = 'meta';
             parsedRequest.metaChannel = message.channel;
         } else {             
-            var nickname = parseNicknamefromUserChannelUrl(message.channel);
+            let nickname = self.parseNicknamefromUserChannelUrl(message.channel);
             if(nickname !== null){
                 parsedRequest.isOnUserChannel = true;
                 parsedRequest.channelParams.nickname = nickname;                
@@ -43,8 +43,8 @@ module.exports = function(){
         return parsedRequest;
     }
 
-    function parseNicknamefromUserChannelUrl(url){
-        var matches = url.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
+    self.parseNicknamefromUserChannelUrl = function(url){
+        let matches = url.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
         if (matches !== null && matches.length > 0){
             return matches[1];
         }else {

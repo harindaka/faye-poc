@@ -2,7 +2,7 @@ module.exports = function(config){
 
     var self = this;
     
-    var redis = require('redis').createClient(config.dataStore.options);
+    let redis = require('redis').createClient(config.dataStore.options);
 
     const nicknameCollectionName = 'nicknames';
     

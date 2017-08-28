@@ -12,11 +12,11 @@ module.exports = {
                 }
             },
             topics: {
-                "/log": {
-                    //topic server side configuration goes here
+                chat: {
+                    url: '/chat'
                 },
-                "/chat": {
-                    //topic server side configuration goes here
+                log: {
+                    url: '/log'
                 }
             }
         },

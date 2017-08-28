@@ -2,12 +2,14 @@ module.exports = function(
     config, 
     fayeServer, 
     serversideClient,
+    channelRequestParser,
+    messageFactory,
     tokenUtil,
     errorUtil
 ){
     var self = this;
 
-    var ms = require('ms');
+    let ms = require('ms');
 
     self.validateSession = function(authToken){        
         if(authToken){
@@ -18,16 +20,14 @@ module.exports = function(
     };
 
     self.enqueueSessionExpiration = function(channel, clientId, tokenData){
-        var d = new Date();
-        var currentTimeInSeconds = Math.round(d.getTime() / 1000);
-        var expirationInSeconds = tokenData.exp - currentTimeInSeconds;
+        let d = new Date();
+        let currentTimeInSeconds = Math.round(d.getTime() / 1000);
+        let expirationInSeconds = tokenData.exp - currentTimeInSeconds;
 
-        var matches = channel.match(/^\/chat\/users\/([a-zA-Z0-9]{1,15})$/);
-        if(matches !== null && matches.length > 0){
-            var nickname = matches[1];
-            
+        let nickname = channelRequestParser.parseNicknamefromUserChannelUrl(channel);
+        if(nickname !== null){            
             setTimeout(function() {
-                var sessionExpirationMessage = { meta: { type: 'session-expiration' } };
+                let sessionExpirationMessage = messageFactory.create('session-expiration');
                 serversideClient.publish(channel, sessionExpirationMessage).then(() => {
                     console.log('[' + nickname + '][' + channel + '] Published session-expiration');
                 }).catch((error) => {

@@ -30,9 +30,9 @@ module.exports = function(
                     return dataStore.updateAuthToken(request.channelParams.nickname, newToken);
                 });
             } else if(topicIndex[request.channel]){
-                return sessionManager.validateSession(request.authToken).then((tokenData) => {
+                return sessionManager.validateSession(request.authToken).then((tokenData) => {                    
+                    sessionManager.enqueueSessionExpiration(request.channel, request.clientId, tokenData);   
                     console.log('[' + tokenData.nickname + '][' + request.channel + '] Received subscription request');
-                    sessionManager.enqueueSessionExpiration(request.channel, request.clientId, tokenData);                
                 });
             } else {
                 return Promise.reject(errorUtil.create('E404'));

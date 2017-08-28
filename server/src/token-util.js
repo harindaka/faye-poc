@@ -1,6 +1,7 @@
 module.exports = function(config){
     var self = this;
-    var jwt = require('jsonwebtoken');
+    
+    let jwt = require('jsonwebtoken');
 
     self.generateToken = function(tokenData, expiresIn){
         return new Promise((resolve, reject) => {

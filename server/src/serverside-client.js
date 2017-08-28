@@ -4,8 +4,8 @@ module.exports = function(
     sessionManager){
     var self = this;
     
-    var authToken = null;
-    var serverSideFayeClient = fayeServer.getClient();
+    let authToken = null;
+    let serverSideFayeClient = fayeServer.getClient();
     serverSideFayeClient.addExtension({
         outgoing: function(message, callback) {
             getAuthToken().then((token) => {
