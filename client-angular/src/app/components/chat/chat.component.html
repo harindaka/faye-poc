@@ -1,39 +1,46 @@
-<div class="container">    
-    <div class="row">        
-        <div *ngIf="model.joinLeaveCaption=='Join'" class="col-xs-4" style="padding-right: 10px">
-            <input type="text" maxlength="15" focus="true" [(ngModel)]="model.nickname" (keyup.enter)="onJoinLeaveClicked(model.joinLeaveCaption)" class="form-control" placeholder="Enter Nickname">
-        </div>
-        <div *ngIf="model.joinLeaveCaption=='Leave'" class="col-xs-4 text-muted btn" style="text-align: left">
-            You joined as {{ model.nickname }}
-        </div>
-        <div style="padding: 0 !important;">
-            <button class="btn btn-small btn-primary" (click)="onJoinLeaveClicked(model.joinLeaveCaption)">{{ model.joinLeaveCaption }}</button>
-        </div> 
-        <div *ngIf="model.joinLeaveCaption=='Leave'" class="text-muted btn">
-            Session Duration: {{ model.sessionDurationSeconds }} seconds
-        </div>  
-    </div>
-    <hr/>
-    <div *ngFor="let m of model.messages" class="row" style="margin-bottom:5px !important;">
-        <div class="col-12">
-            <img *ngIf="isEmpty(m.sender)" src="assets/images/notification.jpg" class="img-circle img-responsive" style="width: 30px; height: 30px">                      
-            <img *ngIf="!isEmpty(m.sender)" src="assets/images/user-avatar.png" class="img-circle img-responsive" style="width: 30px; height: 30px">
-            <span *ngIf="!isEmpty(m.sender)">[{{ m.sender }}]: </span>
-            <span>{{ m.text }}</span>                
-        </div>
-    </div>    
-    <div style="height:70px" id="scrollAnchor"></div> 
-</div>
-
-<nav *ngIf="model.joinLeaveCaption=='Leave'" class="navbar fixed-bottom navbar-light bg-faded">
+<header>
     <div class="container">
+        <br/>   
+        <div class="row">        
+            <div *ngIf="model.joinLeaveCaption=='Join'" class="col-6" style="padding-right: 10px">
+                <input type="text" maxlength="15" focus="true" [(ngModel)]="model.nickname" (keyup.enter)="onJoinLeaveClicked(model.joinLeaveCaption)" class="form-control" placeholder="Enter Nickname">
+            </div>
+            <div *ngIf="model.joinLeaveCaption=='Leave'" class="text-muted btn" style="text-align: left">
+                You joined as {{ model.nickname }} ({{ model.sessionDurationSeconds }} seconds)
+            </div>
+            <div>
+                <button class="btn btn-small btn-primary" (click)="onJoinLeaveClicked(model.joinLeaveCaption)">{{ model.joinLeaveCaption }}</button>
+            </div>  
+        </div>                
+        <br/>
+    </div>
+</header>
+<div id="content">
+    <div class="container"> 
+        <br/>   
+        <div *ngFor="let m of model.messages" class="row" style="margin-bottom:5px !important;">
+            <div class="col-12">
+                <img *ngIf="isEmpty(m.sender)" src="assets/images/notification.jpg" class="img-circle img-responsive" style="width: 30px; height: 30px">                      
+                <img *ngIf="!isEmpty(m.sender)" src="assets/images/user-avatar.png" class="img-circle img-responsive" style="width: 30px; height: 30px">
+                <span *ngIf="!isEmpty(m.sender)">[{{ m.sender }}]: </span>
+                <span>{{ m.text }}</span>                
+            </div>
+        </div>
+        <br/>    
+        <div style="height:70px" id="scrollAnchor"></div>    
+    </div>
+</div>
+<footer>
+    <div class="container">
+        <br/>
         <div class="row">         	
-            <div class="col-11" >
+            <div class="col-9" >
                 <input type="text" maxlength="100" [(ngModel)]="model.messageToSend" (keyup.enter)="onSendClicked()" class="form-control" placeholder="Type Your Message Here">
             </div>      
             <div class="col-1" style="padding: 0 !important;">
                 <button class="btn btn-small btn-primary" (click)="onSendClicked()">Send</button>
             </div>          
         </div>
+        <br/>
     </div>
-</nav>
+</footer>

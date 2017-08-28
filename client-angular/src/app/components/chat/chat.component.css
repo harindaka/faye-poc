@@ -1,1 +1,33 @@
+body {
+    overflow: hidden;
+}
+#content {
+    max-height: calc(100% - 120px);
+    overflow-y: scroll;
+    padding: 0px 10% !important;
+    margin-top: 60px !important;
+}
 
+html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+header {
+    width: 100%;
+    /*height: 60px;*/
+    background: whitesmoke;
+    position: fixed;
+    top: 0;
+    z-index: 1000;
+}
+
+footer {
+    width: 100%;
+    /*height: 80px;*/
+    background: whitesmoke;
+    position: fixed;
+    bottom: 0;
+    z-index: 1000;
+}
