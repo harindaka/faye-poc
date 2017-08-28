@@ -27,65 +27,22 @@ export class ChatComponent implements OnInit {
     this.model.messageToSend = "";
     this.model.joinLeaveCaption = "Join"
     this.model.sessionDurationSeconds = 0;
+    this.model.isClientOnline = false;
 
     let config = this.configService.getConfig();
     this.fayeConfig = config.server.faye;
   } 
 
   onJoinLeaveClicked(command: string){
-    var self = this;
-    
-    self.session = null;
     if(command == "Join"){
-      if(!self.model.nickname || !(/^[a-zA-Z0-9]{1,15}$/.test(self.model.nickname))){
-        self.appendAppMessage("Invalid username entered. Please try again");
-      } else {
-        self.initializeFayeClient();        
-
-        self.subscribeToUserChannel().then(()=>{
-          return self.subscribeToChatChannel();
-        }).then((subscription) => {
-          self.session.chatSubscription = subscription;
-          self.model.joinLeaveCaption = "Leave";
-
-          self.sessionDurationCounterHandle = setInterval(function(){
-            self.model.sessionDurationSeconds += 1;
-          }, 1000);
-
-          self.appendAppMessage("You joined the chat");
-        }, (error) => {
-          if(self.session && self.session.userSubscription){
-            self.session.userSubscription.cancel();
-          }
-          self.appendAppMessage("Unable to join chat due to error: " + self.getErrorMessage(error));
-        });
-      }
+      this.joinChat();
     }else{
-      self.resetChat(false);
+      this.resetChat(false);
     }
   }
 
   onSendClicked(){
-    var self = this;
-
-    if(self.model.joinLeaveCaption === "Leave" 
-      && self.model.messageToSend != null 
-      && self.model.messageToSend.trim() != ''){      
-      
-      let message = { 
-        meta: { type: 'chat' },
-        text: self.model.messageToSend        
-      };
-
-      self.model.messageToSend = '';
-      
-      self.fayeClient.publish(self.fayeConfig.topics.chat.url, message, {
-          deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-          attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
-      }, (error) => {
-        self.appendAppMessage('The server explicitly rejected publishing your message which was sent due to error: ' + self.getErrorMessage(error));        
-      });
-    }
+    this.sendChat();
   }
 
   isEmpty(value:any): boolean{
@@ -117,6 +74,43 @@ export class ChatComponent implements OnInit {
         callback(message);
       }        
     });
+
+    self.fayeClient.on('transport:down', function() {
+        self.model.isClientOnline = false;
+    });
+
+    self.fayeClient.on('transport:up', function() {
+        self.model.isClientOnline = true;
+    });
+  }
+
+  private joinChat(): void {
+    var self = this;
+    
+    self.session = null;
+    if(!self.model.nickname || !(/^[a-zA-Z0-9]{1,15}$/.test(self.model.nickname))){
+      self.appendAppMessage("Invalid username entered. Please try again");
+    } else {
+      self.initializeFayeClient();        
+
+      self.subscribeToUserChannel().then(()=>{
+        return self.subscribeToChatChannel();
+      }).then((subscription) => {
+        self.session.chatSubscription = subscription;
+        self.model.joinLeaveCaption = "Leave";
+
+        self.sessionDurationCounterHandle = setInterval(function(){
+          self.model.sessionDurationSeconds += 1;
+        }, 1000);
+
+        self.appendAppMessage("You joined the chat");
+      }, (error) => {
+        if(self.session && self.session.userSubscription){
+          self.session.userSubscription.cancel();
+        }
+        self.appendAppMessage("Unable to join chat due to error: " + self.getErrorMessage(error));
+      });
+    }
   }
 
   private subscribeToUserChannel(): Promise<any>{
@@ -172,6 +166,29 @@ export class ChatComponent implements OnInit {
       });      
     });
   }
+
+  private sendChat(): void{
+    var self = this;
+
+    if(self.model.joinLeaveCaption === "Leave" 
+      && self.model.messageToSend != null 
+      && self.model.messageToSend.trim() != ''){      
+      
+      let message = { 
+        meta: { type: 'chat' },
+        text: self.model.messageToSend        
+      };
+
+      self.model.messageToSend = '';
+      
+      self.fayeClient.publish(self.fayeConfig.topics.chat.url, message, {
+          deadline: 10, //client will not attempt to resend the message any later than 10 seconds after the first publish() call
+          attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+      }, (error) => {
+        self.appendAppMessage('Failed to send your message due to error: ' + self.getErrorMessage(error));        
+      });
+    }
+  }
   
   private resetChat(isSessionExpired: boolean): void{
     var self = this;
@@ -183,6 +200,8 @@ export class ChatComponent implements OnInit {
       if(self.session.userSubscription){
         self.session.userSubscription.cancel();
       }
+
+      self.session = null;
     }
 
     if(self.fayeClient && self.fayeClient !== null){
@@ -194,16 +213,14 @@ export class ChatComponent implements OnInit {
     if(self.sessionDurationCounterHandle){
       clearInterval(self.sessionDurationCounterHandle);
     }
-
-    if(self.model.joinLeaveCaption !== "Join"){
-      self.model.joinLeaveCaption = "Join";
-      if(isSessionExpired){
-        self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
-      }
-      else{
-        self.appendAppMessage("You left the chat");
-      }
+    
+    self.model.joinLeaveCaption = "Join";
+    if(isSessionExpired){
+      self.appendAppMessage("You were logged out since your session has expired. Please join again to continue");
     }
+    else{
+      self.appendAppMessage("You left the chat");
+    }    
   }
 
   private appendChatMessage(message: any): void{
@@ -219,7 +236,6 @@ export class ChatComponent implements OnInit {
     });
 
     this.changeDetectorRef.detectChanges();
-
     this.scrollService.scrollTo('#scrollAnchor');
   }
 
