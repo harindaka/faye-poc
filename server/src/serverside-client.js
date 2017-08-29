@@ -24,9 +24,15 @@ module.exports = function(
     });
 
     self.publish = function(channel, message){
-        return serverSideFayeClient.publish(channel, message, {
-            deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
-            attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+        return new Promise((resolve, reject) => {
+            serverSideFayeClient.publish(channel, message, {
+                deadline: 10, //client will not attempt to resend the message any later than 10 seconds after your first publish() call
+                attempts: 3 //how many times the client will try to send a message before giving up, including the first attempt
+            }).then(()=> {
+                resolve();
+            }, (error)=>{
+                reject(error);
+            });
         });
     };
 

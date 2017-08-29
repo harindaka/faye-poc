@@ -22,9 +22,9 @@ module.exports = {
         },
         security: {
             tokenSecret: "03f28a2d-e156-4169-a8f6-fb2beaeb6a4b",
-            clientTokenExpiresIn: "1m",
+            clientTokenExpiresIn: "30s",
             serverTokenExpiresIn: "10y",
-            idleSubscriptionExpirationWindow: "0.5m"
+            idleSubscriptionExpirationWindow: "10s"
         }
     },
 

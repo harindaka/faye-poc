@@ -42,7 +42,7 @@ module.exports = function(
         else{
             setTimeout(function() {                
                 destroyClient(clientId);                
-            }, expirationInSeconds * 1000);
+            }, (expirationInSeconds * 1000) + ms(config.server.security.idleSubscriptionExpirationWindow));
         }
     };
 
