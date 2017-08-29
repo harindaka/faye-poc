@@ -1,5 +1,6 @@
 module.exports = function(
-    config, 
+    config,
+    sessionStore, 
     fayeServer, 
     serversideClient,
     channelRequestParser,
@@ -11,7 +12,35 @@ module.exports = function(
 
     let ms = require('ms');
 
-    self.validateSession = function(authToken){        
+    self.createSession = function(request){
+        let newToken = null;
+        return sessionStore.reserveNickname(request.channelParams.nickname).then((isSuccess) => {
+            if(!isSuccess){
+                throw errorUtil.create('E409');
+            }
+
+            return tokenUtil.generateToken({
+                nickname: request.channelParams.nickname,
+                clientId: request.clientId
+            });
+        }).then((token) => {
+            newToken = token;
+            return tokenUtil.decryptToken(token);
+        }).then((tokenData) => {
+            let promise = sessionStore.updateToken(request.channelParams.nickname, request.clientId, newToken);
+            enqueueSessionExpiration(request.channel, request.clientId, tokenData);                    
+            return promise;
+        });
+    }
+
+    self.validateSubscription = function(request){        
+        return self.validateMessage(request.authToken).then((tokenData) => {
+            enqueueSessionExpiration(request.channel, request.clientId, tokenData);   
+            return Promise.resolve(tokenData);
+        });              
+    };
+
+    self.validateMessage = function(authToken){        
         if(authToken){
             return tokenUtil.decryptToken(authToken);
         } else {
@@ -19,7 +48,7 @@ module.exports = function(
         }                
     };
 
-    self.enqueueSessionExpiration = function(channel, clientId, tokenData){
+    function enqueueSessionExpiration(channel, clientId, tokenData){
         let d = new Date();
         let currentTimeInSeconds = Math.round(d.getTime() / 1000);
         let expirationInSeconds = tokenData.exp - currentTimeInSeconds;
@@ -28,6 +57,7 @@ module.exports = function(
         if(nickname !== null){            
             setTimeout(function() {
                 let sessionExpirationMessage = messageFactory.create('session-expiration');
+                sessionExpirationMessage.clientId = tokenData.clientId;
                 serversideClient.publish(channel, sessionExpirationMessage).then(() => {
                     console.log('[' + nickname + '][' + channel + '] Published session-expiration');
                 }).catch((error) => {

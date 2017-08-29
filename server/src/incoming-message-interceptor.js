@@ -8,7 +8,7 @@ module.exports = function(
     self.processRequest = function(request, message){
         try{            
             if(request.isOnUserChannel || topicIndex[request.channel]){
-                return sessionManager.validateSession(request.authToken).then((tokenData) => {                     
+                return sessionManager.validateMessage(request.authToken).then((tokenData) => {                     
                     if(typeof tokenData.nickname !== 'undefined' && tokenData.nickname !== null){
                         console.log('[' + tokenData.nickname + '][' + request.channel + '] Received message: ' + JSON.stringify(message.data));
                         message.data.sender = tokenData.nickname;

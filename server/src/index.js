@@ -9,8 +9,8 @@
     let MessageFactory = require('./message-factory');
     let messageFactory = new MessageFactory();
     
-    let DataStore = require('./data-store');
-    let dataStore = new DataStore(config);
+    let SessionStore = require('./session-store');
+    let sessionStore = new SessionStore(config);
 
     let ErrorUtil = require('./error-util');
     let errorUtil = new ErrorUtil(config);
@@ -28,10 +28,10 @@
     let channelRequestParser = new ChannelRequestParser();
 
     let SessionManager = require('./session-manager');
-    let sessionManager = new SessionManager(config, fayeServer, serversideClient, channelRequestParser, messageFactory, tokenUtil, errorUtil);    
+    let sessionManager = new SessionManager(config, sessionStore, fayeServer, serversideClient, channelRequestParser, messageFactory, tokenUtil, errorUtil);    
 
-    let SubscriptionInterceptor = require('./incoming-subscription-interceptor');
-    let subscriptionInterceptor = new SubscriptionInterceptor(topicIndex, dataStore, tokenUtil, sessionManager, errorUtil);
+    let SubscriptionInterceptor = require('./subscription-interceptor');
+    let subscriptionInterceptor = new SubscriptionInterceptor(topicIndex, sessionManager, errorUtil);
 
     let IncomingMessageInterceptor = require('./incoming-message-interceptor');
     let incomingMessageInterceptor = new IncomingMessageInterceptor(topicIndex, sessionManager, errorUtil);
@@ -83,8 +83,9 @@
             let userJoinMessage = messageFactory.create('chat');
             userJoinMessage.text = nickname + ' joined the chat';
 
-            dataStore.getAuthToken(nickname).then((authToken) => {
+            sessionStore.retrieveToken(nickname, clientId).then((authToken) => {
                 tokenMessage.authToken = authToken;
+                tokenMessage.clientId = clientId;
                 return serversideClient.publish(channel, tokenMessage);
             }).then(() => {
                 console.log('[' + nickname + '][' + channel + '] Published auth-token');                
@@ -106,7 +107,7 @@
             let userLeaveMessage = messageFactory.create('chat');
             userLeaveMessage.text = nickname + ' left the chat';
 
-            dataStore.removeNickname(nickname).then(() => {
+            sessionStore.deleteToken(nickname, clientId).then(() => {
                 return serversideClient.publish(config.server.faye.topics.chat.url, userLeaveMessage);
             }).then(() => {
                 console.log('[' + nickname + '][' + config.server.faye.topics.chat.url + '] Published chat: ' + JSON.stringify(userLeaveMessage));

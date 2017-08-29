@@ -124,13 +124,16 @@ export class ChatComponent implements OnInit {
             case "auth-token":
               self.session = {
                 token: message.authToken,
+                clientId: message.clientId,
                 userSubscription: subscription
               }              
               resolve();
               break;
 
             case "session-expiration":
-              self.resetChat(true);
+              if(self.session.clientId === message.clientId){
+                self.resetChat(true);
+              }
               break;
           }
         }

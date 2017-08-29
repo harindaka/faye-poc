@@ -28,7 +28,7 @@ module.exports = {
         }
     },
 
-    dataStore: {
+    sessionStore: {
         options: { 
             host: 'localhost', 
             port: 6379
