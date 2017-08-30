@@ -1,7 +1,7 @@
 (function(){
     
     var faye = require('faye');    
-    var fayeClient = new faye.Client('http://localhost:3000/messages', {
+    var fayeClient = new faye.Client('http://localhost:3030/messages', {
         timeout: 40,
         retry: 2 //the amount of time in seconds that the client will wait between detecting a failed delivery and retrying the message        
     });
