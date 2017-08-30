@@ -1,7 +1,7 @@
 {
     "server": {
         "faye": {
-            "baseUrl": "http://localhost:3000/messages", 
+            "baseUrl": "https://localhost:3030/messages", 
             "topics": {
                 "chat": { 
                     "url": "/chat"
