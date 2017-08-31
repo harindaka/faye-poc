@@ -1,7 +1,5 @@
 # faye-poc
-A POC done to understand Faye Server and Client behaviour
-
-How to Run the project:
+This is a POC which  Faye Server and Client behaviour
 
 You will need to have the following installed globally and available in your PATH
 1. NodeJS (node)
@@ -9,7 +7,7 @@ You will need to have the following installed globally and available in your PAT
 3. Redis Server on localhost:6379 (redis)
 4. Nginx Web Server (nginx). Note that nginx will need to use the included nginx/nginx.conf configuration. The `run-nginx` scripts mentioned below will automatically take care of this. The nginx.conf is configured to make nginx proxy the faye server on port 3443 via SSL.
 
-Follow the steps below to run the project manually.
+Follow the steps below to run the project,
 
 1. Clone this repository into a folder and `cd` into it
 2. Run your Redis server with the command `run-redis.bat` (windows) or `./run-redis` (*nix/mac)
@@ -22,7 +20,7 @@ Follow the steps below to run the project manually.
 8. Execute the command `npm start` to start the server on port 4200
 9. Access the web client using a web browser via http://localhost:4200 
 
-For a load balanced setup follow the steps below;
+For a load balanced setup follow the steps below,
 
 1. In the nginx/nginx.conf add one or more server entries in the upstream faye_server section
 i.e.: 
