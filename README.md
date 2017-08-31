@@ -1,5 +1,5 @@
 # faye-poc
-This is a POC which  Faye Server and Client behaviour
+This is a POC done for evaluating the Faye Server and Client behaviour
 
 You will need to have the following installed globally and available in your PATH
 1. NodeJS (node)
