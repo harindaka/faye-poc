@@ -47,6 +47,9 @@ module.exports = function(config){
                                             if(error){
                                                 reject(error);
                                             }
+                                            else {
+                                                resolve();
+                                            }
                                         });                                        
                                     }
                                 } catch(e){
