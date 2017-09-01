@@ -1,6 +1,12 @@
 (function(){
     
     let config = require('./config');
+
+    let port = config.server.port;
+    if(process.argv.length > 2){
+        port = process.argv[2];
+    }
+
     let http = require('http');
     let httpServer = http.createServer();
 
@@ -129,12 +135,12 @@
     }
 
     fayeServer.attach(httpServer);
-    httpServer.listen(config.server.port, (error) => {
+    httpServer.listen(port, (error) => {
         if(error){
             console.log('Failed to initialize http server due to error: ' + errorUtil.toMessage(error));
         }
         else{
-            console.log('Successfully initialized server on port ' + config.server.port);
+            console.log('Successfully initialized server on port ' + port);
 
             // let publishedMessageCount = 0;
             // setInterval(() => {          
