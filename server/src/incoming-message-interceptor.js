@@ -9,10 +9,13 @@ module.exports = function(
         try{            
             if(request.isOnUserChannel || topicIndex[request.channel]){
                 return sessionManager.validateMessage(request.authToken).then((tokenData) => {                     
-                    if(typeof tokenData.nickname !== 'undefined' && tokenData.nickname !== null){
+                    if(typeof tokenData.tokenType !== 'undefined' && tokenData.tokenType === "server-auth-token"){
+                        console.log('[#SERVER][' + request.channel + '] Received message: ' + JSON.stringify(message.data));    
+                    }
+                    else if(typeof tokenData.nickname !== 'undefined' && tokenData.nickname !== null){
                         console.log('[' + tokenData.nickname + '][' + request.channel + '] Received message: ' + JSON.stringify(message.data));
                         message.data.sender = tokenData.nickname;
-                    }                
+                    }                    
                     else{
                         console.log('[' + request.channel + '] Received message: ' + JSON.stringify(message.data));
                     }

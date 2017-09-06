@@ -75,7 +75,7 @@
             outgoingMessageInterceptor.processResponse(message).then(() => {
                 callback(message);
             }).catch((error) => {
-                console.log('[' + parsedRequest.channel + '] Failed to process outgoing message due to error: ' + errorUtil.toMessage(error));
+                console.log('[!!!Error][' + parsedRequest.channel + '] Failed to process outgoing message due to error: ' + errorUtil.toMessage(error));
                 message.error = errorUtil.toJson(error);
                 callback(message);
             });
@@ -94,15 +94,15 @@
                 tokenMessage.clientId = clientId;
                 return serversideClient.publish(channel, tokenMessage);
             }).then(() => {
-                console.log('[' + nickname + '][' + channel + '] Published auth-token');                
+                console.log('[#SERVER][@' + nickname + '][' + channel + '] Published auth-token');                
             }).catch((error) => {
-                console.log('[' + nickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + errorUtil.toMessage(error));                
+                console.log('[!!!ERROR][$' + nickname + '][' + channel + '] Failed to publish auth-token ' + JSON.stringify(tokenMessage) + ' due to error: ' + errorUtil.toMessage(error));                
             }).then(() => {
                 return serversideClient.publish(config.server.faye.topics.chat.url, userJoinMessage);
             }).then(() => {
-                console.log('[' + nickname + '][' + config.server.faye.topics.chat.url + '] Published message: ' + JSON.stringify(userJoinMessage));                
+                console.log('[#SERVER][@ALL][' + config.server.faye.topics.chat.url + '] Published message: ' + JSON.stringify(userJoinMessage));                
             }).catch((error) => {
-                console.log('[' + nickname + '][' + config.server.faye.topics.chat.url + '] Failed to publish message ' + JSON.stringify(userJoinMessage) + ' due to error: ' + errorUtil.toMessage(error));                
+                console.log('[!!!ERROR][$' + nickname + '][' + config.server.faye.topics.chat.url + '] Failed to publish message ' + JSON.stringify(userJoinMessage) + ' due to error: ' + errorUtil.toMessage(error));                
             });                                   
         }
     });
@@ -116,9 +116,9 @@
             sessionStore.deleteToken(nickname, clientId).then(() => {
                 return serversideClient.publish(config.server.faye.topics.chat.url, userLeaveMessage);
             }).then(() => {
-                console.log('[' + nickname + '][' + config.server.faye.topics.chat.url + '] Published chat: ' + JSON.stringify(userLeaveMessage));
+                console.log('[#SERVER][@ALL][' + config.server.faye.topics.chat.url + '] Published chat: ' + JSON.stringify(userLeaveMessage));
             }).catch((error) => {
-                console.log('[' + nickname + '][' + config.server.faye.topics.chat.url + '] Failed to publish chat ' + JSON.stringify(userLeaveMessage) + ' due to error: ' + errorUtil.toMessage(error));                
+                console.log('[!!!ERROR][$' + nickname + '][' + config.server.faye.topics.chat.url + '] Failed to publish chat ' + JSON.stringify(userLeaveMessage) + ' due to error: ' + errorUtil.toMessage(error));                
             });                   
         }
     });
@@ -137,10 +137,10 @@
     fayeServer.attach(httpServer);
     httpServer.listen(port, (error) => {
         if(error){
-            console.log('Failed to initialize http server due to error: ' + errorUtil.toMessage(error));
+            console.log('[!!!Error] Failed to initialize http server due to error: ' + errorUtil.toMessage(error));
         }
         else{
-            console.log('Successfully initialized server on port ' + port);
+            console.log('[#Server] Successfully initialized server on port ' + port);
 
             // let publishedMessageCount = 0;
             // setInterval(() => {          

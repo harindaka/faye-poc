@@ -59,24 +59,39 @@ module.exports = function(
                 let sessionExpirationMessage = messageFactory.create('session-expiration');
                 sessionExpirationMessage.clientId = tokenData.clientId;
                 serversideClient.publish(channel, sessionExpirationMessage).then(() => {
-                    console.log('[' + nickname + '][' + channel + '] Published session-expiration');
+                    console.log('[#SERVER][@' + nickname + '][' + channel + '] Published session-expiration');
                 }).catch((error) => {
-                    console.log('[' + nickname + '][' + channel + '] Failed to publish session-expiration due to error: ' + error.message);                
+                    console.log('[!!!ERROR][$' + nickname + '][' + channel + '] Failed to publish session-expiration due to error: ' + error.message);                
                 }).then(() => {
                     setTimeout(function() {
-                        destroyClient(clientId);
+                        disconnectClient(channel, clientId, nickname);
                     }, ms(config.server.security.idleSubscriptionExpirationWindow));
                 });            
             }, expirationInSeconds * 1000);
         }
         else{
             setTimeout(function() {                
-                destroyClient(clientId);                
+                disconnectClient(channel, clientId);                
             }, (expirationInSeconds * 1000) + ms(config.server.security.idleSubscriptionExpirationWindow));
         }
     };
 
-    function destroyClient(clientId){
-        fayeServer._server._engine.destroyClient(clientId, function() {});
+    function disconnectClient(channel, clientId, nickname){
+        if(typeof nickname === 'undefined' || nickname === null){
+            nickname = '';
+        }
+        else{
+            nickname = '[$' + nickname + ']';
+        }
+
+        let metaDisconnectChannel = '/meta/disconnect';
+        let disconnectClientMessage = messageFactory.createMeta(metaDisconnectChannel, clientId);
+        serversideClient.publish(metaDisconnectChannel, disconnectClientMessage).then(() => {
+            console.log('[#SERVER]' + nickname + '[' + channel + '] Published client disconnection');
+        }).catch((error) => {
+            console.log('[!!!ERROR]' + nickname + '[' + channel + '] Failed to publish client disconnection due to error: ' + error.message);                
+        });
+
+        //fayeServer._server._engine.destroyClient(clientId, function() {});
     }
 }
