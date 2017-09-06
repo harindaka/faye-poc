@@ -10,8 +10,9 @@
             </div>
             <div>
                 <button class="btn btn-small btn-primary" (click)="onJoinLeaveClicked(model.joinLeaveCaption)">{{ model.joinLeaveCaption }}</button>
-                <img *ngIf="model.isClientOnline" src="assets/images/online.png" class="img-circle img-responsive" style="width: 30px; height: 30px">
-                <img *ngIf="!model.isClientOnline" src="assets/images/offline.gif" class="img-circle img-responsive" style="width: 30px; height: 30px">
+                &nbsp;
+                <img *ngIf="model.isClientOnline" src="assets/images/online.ico" class="img-circle img-responsive" style="width: 30px; height: 30px;">
+                <img *ngIf="!model.isClientOnline" src="assets/images/offline.ico" class="img-circle img-responsive" style="width: 30px; height: 30px;">
             </div>  
         </div>                
         <br/>
